@@ -1,0 +1,14 @@
+# Môi trường & Mật khẩu
+.env
+
+# Node.js
+node_modules/
+dist/
+
+# Dữ liệu Database & Storage (đừng đẩy lên Git)
+config/postgres/data/
+config/kong/db-data/
+config/minio/data/
+
+# Hệ điều hành
+.DS_Store
