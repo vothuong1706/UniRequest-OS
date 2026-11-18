@@ -1,0 +1,86 @@
+id: unirequest-lifecycle
+namespace: unirequest.dxos
+description: >
+  DX-OS Open-Core Workflow Engine (Kestra Apache-2.0) - Điều phối vòng đời yêu cầu
+  Đại học theo chuẩn GitOps YAML: phân tuyến phòng ban, cảnh báo SLA và ghi nhận kiểm toán.
+
+tasks:
+  - id: log_incoming_event
+    type: io.kestra.plugin.core.log.Log
+    message: >-
+      [DX-OS Workflow] event={{ trigger.body.event ?? 'unknown' }} |
+      request_id={{ trigger.body.request_id ?? 'N/A' }} |
+      category={{ trigger.body.category ?? 'ACADEMIC' }} |
+      priority={{ trigger.body.priority ?? 'NORMAL' }} |
+      status={{ trigger.body.status ?? 'PENDING' }} |
+      actor={{ trigger.body.actor ?? trigger.body.created_by ?? 'N/A' }}
+
+  - id: route_by_lifecycle_event
+    type: io.kestra.plugin.core.flow.Switch
+    value: "{{ trigger.body.event ?? 'request.created' }}"
+    cases:
+      request.created:
+        - id: route_department_by_category
+          type: io.kestra.plugin.core.flow.Switch
+          value: "{{ trigger.body.category ?? 'ACADEMIC' }}"
+          cases:
+            FACILITY:
+              - id: dept_facility
+                type: io.kestra.plugin.core.log.Log
+                message: >-
+                  [DEPT-ROUTING] Chuyển yêu cầu #{{ trigger.body.request_id }} tới
+                  Phòng Quản trị Cơ sở vật chất ({{ trigger.body.title }})
+            CERTIFICATE:
+              - id: dept_student_affairs
+                type: io.kestra.plugin.core.log.Log
+                message: >-
+                  [DEPT-ROUTING] Chuyển yêu cầu #{{ trigger.body.request_id }} tới
+                  Phòng Công tác Sinh viên ({{ trigger.body.title }})
+          defaults:
+            - id: dept_academic
+              type: io.kestra.plugin.core.log.Log
+              message: >-
+                [DEPT-ROUTING] Chuyển yêu cầu #{{ trigger.body.request_id }} tới
+                Phòng Đào tạo & Học vụ ({{ trigger.body.title }})
+
+        - id: classify_sla_priority
+          type: io.kestra.plugin.core.flow.Switch
+          value: "{{ trigger.body.priority ?? 'NORMAL' }}"
+          cases:
+            URGENT:
+              - id: sla_urgent_alert
+                type: io.kestra.plugin.core.log.Log
+                level: WARN
+                message: >-
+                  [SLA-URGENT] Kích hoạt cảnh báo khẩn cấp (< 2 giờ) cho yêu cầu
+                  #{{ trigger.body.request_id }} từ {{ trigger.body.created_by }}
+            HIGH:
+              - id: sla_high_route
+                type: io.kestra.plugin.core.log.Log
+                message: >-
+                  [SLA-HIGH] Chuyển hàng đợi ưu tiên trong ngày (< 8 giờ) cho yêu cầu
+                  #{{ trigger.body.request_id }}
+          defaults:
+            - id: sla_normal_route
+              type: io.kestra.plugin.core.log.Log
+              message: >-
+                [SLA-STANDARD] Tiếp nhận yêu cầu tiêu chuẩn #{{ trigger.body.request_id }}
+                (SLA <= 24 giờ)
+
+      request.status_changed:
+        - id: notify_decision
+          type: io.kestra.plugin.core.log.Log
+          message: >-
+            [WORKFLOW-DECISION] Yêu cầu #{{ trigger.body.request_id }} ({{ trigger.body.title }})
+            đã chuyển sang [{{ trigger.body.status }}] bởi {{ trigger.body.actor ?? 'staff' }}
+            | Ghi chú: {{ trigger.body.review_note ?? 'Không có' }}
+
+    defaults:
+      - id: generic_audit_log
+        type: io.kestra.plugin.core.log.Log
+        message: "[DX-OS Audit] Sự kiện tùy biến: {{ trigger.body }}"
+
+triggers:
+  - id: unirequest_webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: "unirequest-dxos-webhook-2026"

@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 264" width="1120" height="264" role="img" aria-label="Luồng nghiệp vụ động 5 bước UniRequest-OS">
+  <defs>
+    <style>
+      .h { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 800; font-size: 16px; fill: #0f172a; }
+      .t { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 700; font-size: 12.5px; fill: #0f172a; }
+      .d { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; font-size: 10.5px; fill: #475569; }
+      .num { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 800; font-size: 11px; fill: #ffffff; }
+      .wire {
+        stroke: #2563eb;
+        stroke-width: 2.5;
+        fill: none;
+        stroke-dasharray: 6 5;
+        animation: flowStep 1s linear infinite;
+      }
+      @keyframes flowStep {
+        from { stroke-dashoffset: 22; }
+        to { stroke-dashoffset: 0; }
+      }
+    </style>
+    <marker id="stepArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="264" rx="16" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="28" y="38" class="h">LUỒNG XỬ LÝ YÊU CẦU TỰ ĐỘNG HÓA 5 BƯỚC</text>
+  <text x="28" y="58" class="d">Từ gửi yêu cầu danh mục động, kiểm tra đầu vào, lưu CSDL &amp; thông báo realtime đến điều phối Kestra YAML và phê duyệt</text>
+
+  <!-- Step 1 -->
+  <g transform="translate(24, 84)">
+    <rect width="192" height="152" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>
+    <circle cx="24" cy="24" r="12" fill="#0f172a"/>
+    <text x="20.5" y="28" class="num">1</text>
+    <text x="44" y="29" class="t">Gửi yêu cầu</text>
+    <text x="14" y="58" class="d">Đăng nhập SSO Keycloak,</text>
+    <text x="14" y="76" class="d">chọn danh mục động qua</text>
+    <text x="14" y="94" class="d">Combobox và đính kèm tệp</text>
+    <text x="14" y="112" class="d">lên lưu trữ MinIO S3.</text>
+    <rect x="14" y="124" width="116" height="17" rx="4" fill="#dbeafe"/>
+    <text x="20" y="136" font-family="monospace" font-size="9.5" font-weight="700" fill="#1e40af">POST /api/upload</text>
+  </g>
+
+  <path d="M 218 160 L 242 160" class="wire" marker-end="url(#stepArrow)"/>
+
+  <!-- Step 2 -->
+  <g transform="translate(244, 84)">
+    <rect width="192" height="152" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>
+    <circle cx="24" cy="24" r="12" fill="#2563eb"/>
+    <text x="20.5" y="28" class="num">2</text>
+    <text x="44" y="29" class="t">Kiểm tra đầu vào</text>
+    <text x="14" y="58" class="d">Ràng buộc động 2 lớp:</text>
+    <text x="14" y="76" class="d">• Minh chứng theo danh mục</text>
+    <text x="14" y="94" class="d">• Khẩn cấp cần lý do ≥10kt</text>
+    <text x="14" y="112" class="d">• Chặn truy cập thiếu JWT.</text>
+    <rect x="14" y="124" width="130" height="17" rx="4" fill="#e0e7ff"/>
+    <text x="20" y="136" font-family="monospace" font-size="9.5" font-weight="700" fill="#3730a3">POST /api/requests</text>
+  </g>
+
+  <path d="M 438 160 L 462 160" class="wire" marker-end="url(#stepArrow)"/>
+
+  <!-- Step 3 -->
+  <g transform="translate(464, 84)">
+    <rect width="192" height="152" rx="12" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.3"/>
+    <circle cx="24" cy="24" r="12" fill="#059669"/>
+    <text x="20.5" y="28" class="num">3</text>
+    <text x="44" y="29" class="t">Lưu &amp; Thông báo</text>
+    <text x="14" y="58" class="d">Lưu yêu cầu + lịch sử vào</text>
+    <text x="14" y="76" class="d">PostgreSQL, phát Socket.IO</text>
+    <text x="14" y="94" class="d">và Web Push VAPID tới</text>
+    <text x="14" y="112" class="d">đội ngũ cán bộ phụ trách.</text>
+    <rect x="14" y="124" width="142" height="17" rx="4" fill="#d1fae5"/>
+    <text x="20" y="136" font-family="monospace" font-size="9.5" font-weight="700" fill="#065f46">Postgres + Socket.IO</text>
+  </g>
+
+  <path d="M 658 160 L 682 160" class="wire" marker-end="url(#stepArrow)"/>
+
+  <!-- Step 4 -->
+  <g transform="translate(684, 84)">
+    <rect width="192" height="152" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.4"/>
+    <circle cx="24" cy="24" r="12" fill="#d97706"/>
+    <text x="20.5" y="28" class="num">4</text>
+    <text x="44" y="29" class="t">Điều phối Kestra</text>
+    <text x="14" y="58" class="d">Webhook kích hoạt luồng</text>
+    <text x="14" y="76" class="d">YAML: phân tuyến phòng</text>
+    <text x="14" y="94" class="d">ban theo danh mục và gắn</text>
+    <text x="14" y="112" class="d">cảnh báo SLA khẩn cấp.</text>
+    <rect x="14" y="124" width="132" height="17" rx="4" fill="#fef3c7"/>
+    <text x="20" y="136" font-family="monospace" font-size="9.5" font-weight="700" fill="#92400e">Kestra Apache-2.0</text>
+  </g>
+
+  <path d="M 878 160 L 902 160" class="wire" marker-end="url(#stepArrow)"/>
+
+  <!-- Step 5 -->
+  <g transform="translate(904, 84)">
+    <rect width="192" height="152" rx="12" fill="#f0fdf4" stroke="#10b981" stroke-width="1.4"/>
+    <circle cx="24" cy="24" r="12" fill="#059669"/>
+    <text x="20.5" y="28" class="num">5</text>
+    <text x="44" y="29" class="t">Trao đổi &amp; Duyệt</text>
+    <text x="14" y="58" class="d">Nhắn tin trao đổi trực tiếp,</text>
+    <text x="14" y="76" class="d">duyệt/từ chối kèm lý do,</text>
+    <text x="14" y="94" class="d">báo kết quả tức thì và in</text>
+    <text x="14" y="112" class="d">phiếu xác nhận minh bạch.</text>
+    <rect x="14" y="124" width="150" height="17" rx="4" fill="#dcfce7"/>
+    <text x="20" y="136" font-family="monospace" font-size="9.5" font-weight="700" fill="#166534">Comments + Print PDF</text>
+  </g>
+</svg>
