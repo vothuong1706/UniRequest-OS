@@ -104,7 +104,7 @@ KESTRA_USER="${KESTRA_BASIC_AUTH_USER:-admin@unirequest.edu.vn}"
 KESTRA_PASS="${KESTRA_BASIC_AUTH_PASSWORD:-KestraAdmin2026!}"
 EXEC_RESP=$(curl -sf -u "${KESTRA_USER}:${KESTRA_PASS}" -X POST "http://localhost:8085/api/v1/main/executions/webhook/unirequest.dxos/unirequest-lifecycle/${WEBHOOK_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{"event":"request.created","request_id":"e2e-probe-001","title":"E2E Workflow Probe","priority":"URGENT","status":"PENDING","created_by":"sinhvien1"}')
+  -d '{"event":"request.created","request_id":"e2e-probe-001","title":"E2E Workflow Probe","priority":"URGENT","status":"PENDING","created_by":"sinhvien"}')
 echo "$EXEC_RESP" | grep -q '"id":' \
   && echo -e "${GREEN}✔ Kestra Webhook kích hoạt Execution thành công: $(echo "$EXEC_RESP" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')${NC}" \
   || { echo -e "${RED}✘ Kestra Webhook không tạo được execution${NC}"; exit 1; }

@@ -122,7 +122,7 @@ Hệ thống tuân thủ nguyên lý **phân tách 2 tầng Open-Core**:
 ```mermaid
 sequenceDiagram
     autonumber
-    actor SV as Sinh viên (sinhvien1)
+    actor SV as Sinh viên (sinhvien)
     participant FE as UniRequest Portal / PWA (:3000)
     participant KONG as Kong Gateway (:8000)
     participant KC as Keycloak SSO (:8080)
@@ -246,10 +246,11 @@ make test
 ### Tài khoản mẫu (tự động nạp từ `config/keycloak/realm-export.json`)
 | Tài khoản | Mật khẩu | Vai trò (`realm_access.roles`) | Quyền hạn |
 | :--- | :---: | :--- | :--- |
-| `sinhvien1` | `123456` | `sinhvien` | Tạo yêu cầu, đính kèm tệp, trao đổi trực tiếp, nhận thông báo & in phiếu cá nhân |
-| `canbo1` | `123456` | `canbo` | Xem, trao đổi & phê duyệt yêu cầu toàn trường, quản lý danh mục, xem thống kê |
-| `giangvien1` | `123456` | `giangvien` | Xem, trao đổi & phê duyệt yêu cầu học vụ, quản lý danh mục |
-| `admin1` | `123456` | `admin`, `canbo` | Toàn quyền quản trị hệ thống |
+| `sinhvien` | `Admin@123` | `sinhvien` | Tạo yêu cầu, đính kèm tệp, trao đổi trực tiếp, nhận thông báo & in phiếu cá nhân |
+| `canbo` | `123456` | `canbo` | Xem, trao đổi & phê duyệt yêu cầu toàn trường, quản lý danh mục, xem thống kê |
+| `giangvien` | `123456` | `giangvien` | Xem, trao đổi & phê duyệt yêu cầu học vụ, quản lý danh mục |
+
+> **Quản trị hệ thống (`admin`):** Để đảm bảo bảo mật, hệ thống **không nạp sẵn tài khoản `admin` mật khẩu mặc định** trong realm ứng dụng. Việc quản trị người dùng, cấp/thu hồi vai trò `admin` và cấu hình SSO được thực hiện duy nhất qua **Keycloak Admin Console** (`http://localhost:8080`) bằng tài khoản `KC_ADMIN_USER` / `KC_ADMIN_PASSWORD` đặt trong `.env`.
 
 ### Kiểm tra nhanh API, PWA & Realtime qua Kong Gateway
 ```bash
@@ -280,7 +281,7 @@ make build
 make test
 ```
 
-- Open the **UniRequest Portal (PWA)**: http://localhost:3000 (sign in with `sinhvien1` / `123456`, `giangvien1` / `123456`, or `canbo1` / `123456`).
+- Open the **UniRequest Portal (PWA)**: http://localhost:3000 (sign in with `sinhvien` / `Admin@123`, `giangvien` / `123456`, or `canbo` / `123456`; system administration uses the Keycloak Admin Console at http://localhost:8080 with `KC_ADMIN_*` from `.env`).
 - Open the **Kestra Workflow UI**: http://localhost:8085 (`admin@unirequest.edu.vn` / `KestraAdmin2026!`) to inspect live GitOps YAML executions under namespace `unirequest.dxos`.
 - Verify all core services via Kong: `curl -s http://localhost:8000/api/health`.
 

@@ -28,7 +28,7 @@
       },
       {
         "name": "admin",
-        "description": "Quản trị viên hệ thống UniRequest-OS"
+        "description": "Quản trị viên hệ thống UniRequest-OS (gán thủ công qua Keycloak Admin Console)"
       }
     ]
   },
@@ -64,28 +64,28 @@
   ],
   "users": [
     {
-      "username": "sinhvien1",
+      "username": "sinhvien",
       "enabled": true,
       "emailVerified": true,
       "firstName": "Minh",
       "lastName": "Nguyễn Văn",
-      "email": "sinhvien1@unirequest.edu.vn",
+      "email": "sinhvien@unirequest.edu.vn",
       "credentials": [
         {
           "type": "password",
-          "value": "123456",
+          "value": "Admin@123",
           "temporary": false
         }
       ],
       "realmRoles": ["sinhvien"]
     },
     {
-      "username": "canbo1",
+      "username": "canbo",
       "enabled": true,
       "emailVerified": true,
       "firstName": "Hương",
       "lastName": "Trần Thị",
-      "email": "canbo1@unirequest.edu.vn",
+      "email": "canbo@unirequest.edu.vn",
       "credentials": [
         {
           "type": "password",
@@ -96,12 +96,12 @@
       "realmRoles": ["canbo"]
     },
     {
-      "username": "giangvien1",
+      "username": "giangvien",
       "enabled": true,
       "emailVerified": true,
       "firstName": "Tuấn",
       "lastName": "Lê Anh",
-      "email": "giangvien1@unirequest.edu.vn",
+      "email": "giangvien@unirequest.edu.vn",
       "credentials": [
         {
           "type": "password",
@@ -110,22 +110,6 @@
         }
       ],
       "realmRoles": ["giangvien"]
-    },
-    {
-      "username": "admin1",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Quản trị",
-      "lastName": "Hệ thống",
-      "email": "admin1@unirequest.edu.vn",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "123456",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["admin", "canbo"]
     }
   ]
 }
