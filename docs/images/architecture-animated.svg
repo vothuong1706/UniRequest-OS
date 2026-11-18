@@ -1,0 +1,246 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 676" width="1120" height="676" role="img" aria-label="Kiến trúc động 2 tầng Open-Core của UniRequest-OS">
+  <defs>
+    <style>
+      .title { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 800; fill: #f8fafc; }
+      .sub { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; fill: #94a3b8; }
+      .layer-label { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.8px; }
+      .card-title { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 700; font-size: 13.5px; fill: #f8fafc; }
+      .card-desc { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; font-size: 10.5px; fill: #cbd5e1; }
+      .pill { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 600; }
+      .edge-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 600; fill: #e2e8f0; }
+
+      .flow-blue {
+        stroke: #38bdf8;
+        stroke-width: 2.4;
+        fill: none;
+        stroke-dasharray: 8 6;
+        animation: dashMove 1.2s linear infinite;
+      }
+      .flow-green {
+        stroke: #34d399;
+        stroke-width: 2.4;
+        fill: none;
+        stroke-dasharray: 8 6;
+        animation: dashMove 1.4s linear infinite;
+      }
+      .flow-amber {
+        stroke: #fbbf24;
+        stroke-width: 2.4;
+        fill: none;
+        stroke-dasharray: 8 6;
+        animation: dashMove 1.1s linear infinite;
+      }
+      .flow-violet {
+        stroke: #a78bfa;
+        stroke-width: 2.4;
+        fill: none;
+        stroke-dasharray: 8 6;
+        animation: dashMove 1.3s linear infinite;
+      }
+      .pulse-dot {
+        animation: pulseGlow 2s ease-in-out infinite;
+      }
+      @keyframes dashMove {
+        from { stroke-dashoffset: 28; }
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes pulseGlow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+      }
+    </style>
+
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090d16"/>
+      <stop offset="50%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#0b1220"/>
+    </linearGradient>
+
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
+    </marker>
+    <marker id="arrowViolet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a78bfa"/>
+    </marker>
+
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1e293b" stroke-width="0.7" opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1120" height="676" rx="18" fill="url(#bgGrad)"/>
+  <rect width="1120" height="676" rx="18" fill="url(#grid)"/>
+
+  <!-- Header -->
+  <text x="36" y="42" class="title" font-size="19.5">KIẾN TRÚC ĐỘNG 2 TẦNG OPEN-CORE - UNIREQUEST-OS</text>
+  <text x="36" y="64" class="sub" font-size="12">100% OSI Open Source · Zero-Trust Kong Gateway · Socket.IO + Web Push · Kestra Workflow (Apache-2.0)</text>
+  <rect x="920" y="24" width="164" height="28" rx="14" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+  <circle cx="938" cy="38" r="4.5" fill="#34d399" class="pulse-dot"/>
+  <text x="950" y="42" class="pill" fill="#a7f3d0">PRODUCTION READY</text>
+
+  <!-- ==================== TIER 2: APPLICATION LAYER ==================== -->
+  <rect x="28" y="88" width="1064" height="172" rx="14" fill="#111c33" fill-opacity="0.72" stroke="#3b82f6" stroke-width="1.3" stroke-dasharray="6 4"/>
+  <text x="46" y="112" class="layer-label" fill="#60a5fa">TẦNG 2 · ỨNG DỤNG CỔNG DỊCH VỤ ĐẠI HỌC (APPLICATION LAYER)</text>
+
+  <!-- Actors Node -->
+  <g transform="translate(48, 132)">
+    <rect width="206" height="106" rx="12" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
+    <circle cx="22" cy="24" r="5" fill="#38bdf8" class="pulse-dot"/>
+    <text x="36" y="29" class="card-title">Người dùng</text>
+    <text x="16" y="52" class="card-desc">• Sinh viên (sinhvien)</text>
+    <text x="16" y="70" class="card-desc">• Cán bộ / GV (canbo, giangvien)</text>
+    <text x="16" y="88" class="card-desc">• Quản trị viên (admin)</text>
+  </g>
+
+  <!-- Frontend Portal Node -->
+  <g transform="translate(314, 132)">
+    <rect width="332" height="106" rx="12" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
+    <circle cx="22" cy="24" r="5" fill="#34d399" class="pulse-dot"/>
+    <text x="36" y="29" class="card-title">UniRequest Portal (Frontend + PWA)</text>
+    <text x="16" y="52" class="card-desc">React 19 · TypeScript · Shadcn/UI · Workbox SW</text>
+    <text x="16" y="70" class="card-desc">Socket.IO · Notification Center · Dynamic Form</text>
+    <rect x="16" y="80" width="96" height="18" rx="5" fill="#1e3a8a"/>
+    <text x="26" y="93" class="pill" fill="#bfdbfe">Nginx :3000</text>
+    <rect x="120" y="80" width="94" height="18" rx="5" fill="#064e3b"/>
+    <text x="130" y="93" class="pill" fill="#a7f3d0">PKCE S256</text>
+    <rect x="222" y="80" width="94" height="18" rx="5" fill="#312e81"/>
+    <text x="234" y="93" class="pill" fill="#c7d2fe">PWA + Push</text>
+  </g>
+
+  <!-- Backend API Node -->
+  <g transform="translate(710, 132)">
+    <rect width="360" height="106" rx="12" fill="#064e3b" fill-opacity="0.7" stroke="#10b981" stroke-width="1.5"/>
+    <circle cx="22" cy="24" r="5" fill="#34d399" class="pulse-dot"/>
+    <text x="36" y="29" class="card-title">Backend API &amp; Realtime (Express TS)</text>
+    <text x="16" y="52" class="card-desc">JWT RS256 · RBAC · Socket.IO · Web Push VAPID</text>
+    <text x="16" y="70" class="card-desc">RAM Upload · Comments · Audit · Analytics</text>
+    <rect x="16" y="80" width="104" height="18" rx="5" fill="#065f46"/>
+    <text x="24" y="93" class="pill" fill="#a7f3d0">Node.js :4000</text>
+    <rect x="128" y="80" width="114" height="18" rx="5" fill="#0f766e"/>
+    <text x="136" y="93" class="pill" fill="#ccfbf1">/api + /socket</text>
+    <rect x="250" y="80" width="94" height="18" rx="5" fill="#134e4a"/>
+    <text x="260" y="93" class="pill" fill="#99f6e4">Apache-2.0</text>
+  </g>
+
+  <!-- ==================== TIER 1: HEADLESS OPEN-CORE ==================== -->
+  <rect x="28" y="294" width="1064" height="354" rx="14" fill="#0f172a" fill-opacity="0.88" stroke="#10b981" stroke-width="1.3"/>
+  <text x="46" y="318" class="layer-label" fill="#34d399">TẦNG 1 · NỀN TẢNG DỊCH VỤ LÕI HEADLESS OPEN-CORE (DOCKER COMPOSE)</text>
+
+  <!-- Kong API Gateway (Center Top of Tier 1) -->
+  <g transform="translate(306, 336)">
+    <rect width="508" height="84" rx="12" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.6"/>
+    <circle cx="22" cy="24" r="5" fill="#a78bfa" class="pulse-dot"/>
+    <text x="36" y="29" class="card-title">Kong API Gateway 3.7.1 OSS (Zero-Trust Border)</text>
+    <text x="16" y="50" class="card-desc">Định tuyến /auth, /api &amp; WS /api/socket.io · Rate-Limit 120/m · X-Correlation-ID</text>
+    <rect x="16" y="58" width="108" height="18" rx="5" fill="#312e81"/>
+    <text x="26" y="71" class="pill" fill="#e0e7ff">Proxy :8000</text>
+    <rect x="132" y="58" width="124" height="18" rx="5" fill="#3730a3"/>
+    <text x="142" y="71" class="pill" fill="#c7d2fe">Auto kong-init</text>
+    <rect x="264" y="58" width="96" height="18" rx="5" fill="#1e3a8a"/>
+    <text x="276" y="71" class="pill" fill="#bfdbfe">Apache-2.0</text>
+  </g>
+
+  <!-- 4 Core Services Row -->
+  <!-- 1. Keycloak SSO -->
+  <g transform="translate(48, 466)">
+    <rect width="234" height="122" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="1.4"/>
+    <circle cx="22" cy="24" r="4.5" fill="#38bdf8" class="pulse-dot"/>
+    <text x="34" y="29" class="card-title">1. Keycloak 26.0 SSO</text>
+    <text x="16" y="51" class="card-desc">Identity &amp; RBAC Tập trung</text>
+    <text x="16" y="69" class="card-desc">OIDC · JWT RS256 · PKCE S256</text>
+    <text x="16" y="87" class="card-desc">Auto-import realm-export.json</text>
+    <rect x="16" y="96" width="84" height="18" rx="5" fill="#0c4a6e"/>
+    <text x="24" y="109" class="pill" fill="#bae6fd">Port :8080</text>
+    <rect x="108" y="96" width="92" height="18" rx="5" fill="#1e3a8a"/>
+    <text x="118" y="109" class="pill" fill="#bfdbfe">Apache-2.0</text>
+  </g>
+
+  <!-- 2. PostgreSQL 16 -->
+  <g transform="translate(306, 466)">
+    <rect width="234" height="122" rx="12" fill="#1e293b" stroke="#34d399" stroke-width="1.4"/>
+    <circle cx="22" cy="24" r="4.5" fill="#34d399" class="pulse-dot"/>
+    <text x="34" y="29" class="card-title">2. PostgreSQL 16</text>
+    <text x="16" y="51" class="card-desc">Requests · Categories · Audit</text>
+    <text x="16" y="69" class="card-desc">Notifications · Comments · Push</text>
+    <text x="16" y="87" class="card-desc">DB riêng cho Kestra Workflow</text>
+    <rect x="16" y="96" width="84" height="18" rx="5" fill="#064e3b"/>
+    <text x="24" y="109" class="pill" fill="#a7f3d0">Port :5432</text>
+    <rect x="108" y="96" width="110" height="18" rx="5" fill="#065f46"/>
+    <text x="116" y="109" class="pill" fill="#d1fae5">PostgreSQL OSI</text>
+  </g>
+
+  <!-- 3. MinIO / Silo S3 -->
+  <g transform="translate(564, 466)">
+    <rect width="234" height="122" rx="12" fill="#1e293b" stroke="#f472b6" stroke-width="1.4"/>
+    <circle cx="22" cy="24" r="4.5" fill="#f472b6" class="pulse-dot"/>
+    <text x="34" y="29" class="card-title">3. MinIO / Silo S3</text>
+    <text x="16" y="51" class="card-desc">Lưu trữ tệp đính kèm (Object)</text>
+    <text x="16" y="69" class="card-desc">Bucket unirequest-files (&lt;= 20MB)</text>
+    <text x="16" y="87" class="card-desc">Đẩy trực tiếp từ RAM Buffer</text>
+    <rect x="16" y="96" width="104" height="18" rx="5" fill="#831843"/>
+    <text x="24" y="109" class="pill" fill="#fbcfe8">S3 :9000/:9001</text>
+    <rect x="126" y="96" width="92" height="18" rx="5" fill="#500724"/>
+    <text x="134" y="109" class="pill" fill="#f9a8d4">AGPL / OSI</text>
+  </g>
+
+  <!-- 4. Kestra Workflow Engine -->
+  <g transform="translate(822, 466)">
+    <rect width="248" height="122" rx="12" fill="#271c0a" stroke="#fbbf24" stroke-width="1.6"/>
+    <circle cx="22" cy="24" r="4.5" fill="#fbbf24" class="pulse-dot"/>
+    <text x="34" y="29" class="card-title">4. Kestra Workflow</text>
+    <text x="16" y="51" class="card-desc">GitOps Declarative YAML Flows</text>
+    <text x="16" y="69" class="card-desc">Phân tuyến phòng ban &amp; SLA &lt; 2h</text>
+    <text x="16" y="87" class="card-desc">Webhook Basic-Auth + kestra-init</text>
+    <rect x="16" y="96" width="84" height="18" rx="5" fill="#78350f"/>
+    <text x="24" y="109" class="pill" fill="#fde68a">UI :8085</text>
+    <rect x="108" y="96" width="96" height="18" rx="5" fill="#92400e"/>
+    <text x="118" y="109" class="pill" fill="#fef3c7">Apache-2.0</text>
+  </g>
+
+  <!-- ==================== ANIMATED DATA FLOWS ==================== -->
+  <!-- User -> Frontend -->
+  <path d="M 254 185 L 310 185" class="flow-blue" marker-end="url(#arrowBlue)"/>
+  <text x="262" y="177" class="edge-label">HTTPS</text>
+
+  <!-- Frontend -> Kong -->
+  <path d="M 465 238 L 465 332" class="flow-violet" marker-end="url(#arrowViolet)"/>
+  <rect x="358" y="271" width="214" height="18" rx="4" fill="#090d16" fill-opacity="0.92"/>
+  <text x="366" y="284" class="edge-label">JWT · /auth, /api &amp; WS /socket.io</text>
+
+  <!-- Kong -> Backend -->
+  <path d="M 756 336 L 756 242" class="flow-green" marker-end="url(#arrowGreen)"/>
+  <rect x="764" y="271" width="158" height="18" rx="4" fill="#090d16" fill-opacity="0.92"/>
+  <text x="772" y="284" class="edge-label">/api + Correlation-ID</text>
+
+  <!-- Kong -> Keycloak -->
+  <path d="M 306 382 L 165 382 L 165 462" class="flow-blue" marker-end="url(#arrowBlue)"/>
+  <rect x="174" y="366" width="118" height="18" rx="4" fill="#090d16" fill-opacity="0.92"/>
+  <text x="182" y="379" class="edge-label">/auth (OIDC SSO)</text>
+
+  <!-- Backend -> PostgreSQL -->
+  <path d="M 850 238 L 850 434 L 423 434 L 423 462" class="flow-green" marker-end="url(#arrowGreen)"/>
+  <rect x="434" y="423" width="154" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
+  <text x="442" y="436" class="edge-label">OLTP + Notifications</text>
+
+  <!-- Backend -> MinIO -->
+  <path d="M 906 238 L 906 446 L 681 446 L 681 462" class="flow-violet" marker-end="url(#arrowViolet)"/>
+  <rect x="692" y="436" width="122" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
+  <text x="700" y="449" class="edge-label">S3 Buffer Upload</text>
+
+  <!-- Backend -> Kestra -->
+  <path d="M 982 238 L 982 462" class="flow-amber" marker-end="url(#arrowAmber)"/>
+  <rect x="912" y="346" width="142" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
+  <text x="920" y="359" class="edge-label">Webhook Lifecycle</text>
+
+  <!-- Kestra -> Postgres (Routed cleanly BELOW all 4 cards so nothing overlaps!) -->
+  <path d="M 946 588 L 946 620 L 423 620 L 423 592" class="flow-amber" marker-end="url(#arrowAmber)"/>
+  <rect x="614" y="610" width="142" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
+  <text x="622" y="623" class="edge-label">Queue &amp; Flow State</text>
+</svg>

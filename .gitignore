@@ -1,14 +1,37 @@
-# Môi trường & Mật khẩu
+# Môi trường & Bí mật (luôn giữ lại .env.example)
 .env
+**/.env
+.env.local
+.env.*.local
+!.env.example
+!**/.env.example
 
-# Node.js
+# Node.js & Build Artifacts
 node_modules/
 dist/
+build/
+coverage/
+.vite/
+*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Dữ liệu Database & Storage (đừng đẩy lên Git)
+# Dữ liệu Volume Database & Storage cục bộ
 config/postgres/data/
 config/kong/db-data/
 config/minio/data/
+config/kestra/storage/
 
-# Hệ điều hành
+# Tài liệu ghi chú / đặc tả nháp nội bộ (giữ nguyên docs/images/ cho README)
+docs/specs/
+docs/*.md
+
+# IDE & Hệ điều hành
+.vscode/
+.idea/
 .DS_Store
+Thumbs.db
+tmp/
+*.tmp

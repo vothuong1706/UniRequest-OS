@@ -1,0 +1,118 @@
+name: CI - UniRequest-OS
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  frontend-quality:
+    name: Frontend Clean Code & Build (Shadcn/UI + TS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/demo-app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/demo-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript strict check
+        run: npm run typecheck
+
+      - name: ESLint check
+        run: npm run lint
+
+      - name: Prettier format check
+        run: npm run format:check
+
+      - name: Production Vite build
+        run: npm run build
+
+  backend-quality:
+    name: Backend TypeScript Build (Express API)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend-api
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: apps/backend-api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript compile check
+        run: npm run build
+
+  infra-and-oss-compliance:
+    name: Infra, GitOps Flows & Open-Source Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose configuration
+        run: docker compose --env-file .env.example config -q
+
+      - name: Validate Keycloak Realm JSON & Kestra YAML & SVG Assets
+        run: |
+          python3 - <<'PY'
+          import json, os, re, xml.etree.ElementTree as ET, glob
+
+          # 1. Verify Apache-2.0 LICENSE exists
+          assert os.path.isfile('LICENSE'), 'Missing LICENSE file'
+          assert 'Apache License' in open('LICENSE', encoding='utf-8').read()
+
+          # 2. Validate Keycloak realm export JSON
+          with open('config/keycloak/realm-export.json', encoding='utf-8') as f:
+              realm = json.load(f)
+          assert realm.get('realm') == 'unirequest'
+
+          # 3. Validate Kestra YAML workflow exists & non-empty
+          flow_path = 'config/kestra/flows/unirequest-lifecycle.yml'
+          assert os.path.isfile(flow_path)
+          flow_text = open(flow_path, encoding='utf-8').read()
+          assert 'id: unirequest-lifecycle' in flow_text
+          assert 'namespace: unirequest.dxos' in flow_text
+
+          # 4. Validate all SVG files are well-formed XML
+          svgs = sorted(glob.glob('docs/images/*.svg'))
+          assert len(svgs) >= 2, 'Expected SVG diagrams in docs/images/'
+          for svg in svgs:
+              ET.parse(svg)
+
+          # 5. Verify all relative image/file links in README.md exist
+          readme = open('README.md', encoding='utf-8').read()
+          paths = re.findall(r'(?:src|srcset)="([^"]+)"|\]\(([^)#]+)\)', readme)
+          for a, b in paths:
+              p = a or b
+              if p.startswith('http') or p.startswith('mailto:'):
+                  continue
+              assert os.path.exists(p), f'Broken README link: {p}'
+
+          print('ALL INFRA & OPEN-SOURCE COMPLIANCE CHECKS PASSED!')
+          PY
+
+      - name: Validate Shell Scripts Syntax
+        run: |
+          sh -n kong-setup.sh
+          sh -n scripts/kestra-setup.sh
+          bash -n scripts/test-e2e.sh

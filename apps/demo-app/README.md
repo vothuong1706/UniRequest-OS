@@ -1,16 +1,30 @@
-# React + Vite
+# UniRequest-OS Frontend (`apps/demo-app`)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Giao diện Cổng Tiếp nhận & Xử lý Yêu cầu Đại học xây dựng bằng **React 19 + TypeScript strict + Vite 8 + Tailwind CSS v4 + Shadcn/UI (Radix UI)**.
 
-Currently, two official plugins are available:
+## Kiến trúc thư mục
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```text
+src/
+├── auth/                # Khởi tạo & gia hạn token Keycloak SSO (PKCE S256)
+├── components/
+│   ├── layout/          # Shadcn-Admin Sidebar Inset & Breadcrumb Shell
+│   ├── theme/           # ThemeProvider (Sáng / Tối / Hệ thống)
+│   └── ui/              # Shadcn/UI Radix primitives (New York style)
+├── features/
+│   ├── auth/            # Màn hình đăng nhập Keycloak SSO
+│   ├── dashboard/       # Trang Tổng quan (4 KPI + Yêu cầu gần đây)
+│   └── requests/        # Biểu mẫu tạo yêu cầu, danh sách, chi tiết & duyệt
+├── lib/                 # Tiện ích định dạng & hàm gộp class cn()
+└── services/            # fetchWithAuth & API Client kết nối Kong Gateway
+```
 
-## React Compiler
+## Lệnh phát triển & kiểm tra Clean Code
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run dev           # Khởi chạy máy chủ phát triển Vite
+npm run typecheck     # Kiểm tra kiểu TypeScript strict (tsc -b)
+npm run lint          # Kiểm tra ESLint strict
+npm run format:check  # Kiểm tra chuẩn định dạng Prettier
+npm run build         # Kiểm tra kiểu và build production
+```

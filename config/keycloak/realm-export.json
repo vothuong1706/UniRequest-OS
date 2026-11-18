@@ -1,0 +1,131 @@
+{
+  "realm": "unirequest",
+  "displayName": "UniRequest-OS University SSO",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "sinhvien",
+        "description": "Sinh viên gửi yêu cầu và theo dõi hồ sơ cá nhân"
+      },
+      {
+        "name": "canbo",
+        "description": "Cán bộ phòng ban xem xét và phê duyệt yêu cầu toàn trường"
+      },
+      {
+        "name": "giangvien",
+        "description": "Giảng viên xem xét và phê duyệt yêu cầu học vụ"
+      },
+      {
+        "name": "admin",
+        "description": "Quản trị viên hệ thống UniRequest-OS"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "unirequest-portal",
+      "name": "UniRequest Portal (Frontend SPA)",
+      "description": "Cổng dịch vụ yêu cầu Đại học kết nối qua Kong API Gateway",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "http://localhost:3000",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:5173/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "sinhvien1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Minh",
+      "lastName": "Nguyễn Văn",
+      "email": "sinhvien1@unirequest.edu.vn",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "123456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["sinhvien"]
+    },
+    {
+      "username": "canbo1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Hương",
+      "lastName": "Trần Thị",
+      "email": "canbo1@unirequest.edu.vn",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "123456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["canbo"]
+    },
+    {
+      "username": "giangvien1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Tuấn",
+      "lastName": "Lê Anh",
+      "email": "giangvien1@unirequest.edu.vn",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "123456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["giangvien"]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Quản trị",
+      "lastName": "Hệ thống",
+      "email": "admin1@unirequest.edu.vn",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "123456",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin", "canbo"]
+    }
+  ]
+}
