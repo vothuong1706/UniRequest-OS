@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1620" height="790" viewBox="0 0 1620 790">
+  
+  <defs>
+    <marker id="arrowSolid" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#1e293b"/>
+    </marker>
+    <marker id="arrowOpen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#1e293b" stroke-width="1.6"/>
+    </marker>
+    <marker id="diamondFill" viewBox="0 0 12 12" refX="1" refY="6" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 0 6 L 6 2 L 12 6 L 6 10 z" fill="#1e293b"/>
+    </marker>
+    <g id="icon-actor">
+      <circle cx="0" cy="-22" r="9" fill="#fef3c7" stroke="#92400e" stroke-width="1.8"/>
+      <line x1="0" y1="-13" x2="0" y2="6" stroke="#92400e" stroke-width="1.8"/>
+      <line x1="-13" y1="-6" x2="13" y2="-6" stroke="#92400e" stroke-width="1.8"/>
+      <line x1="0" y1="6" x2="-10" y2="21" stroke="#92400e" stroke-width="1.8"/>
+      <line x1="0" y1="6" x2="10" y2="21" stroke="#92400e" stroke-width="1.8"/>
+    </g>
+    <g id="icon-boundary">
+      <line x1="-22" y1="-15" x2="-22" y2="15" stroke="#334155" stroke-width="2"/>
+      <line x1="-22" y1="0" x2="-14" y2="0" stroke="#334155" stroke-width="2"/>
+      <circle cx="2" cy="0" r="16" fill="#e2e8f0" stroke="#334155" stroke-width="1.8"/>
+    </g>
+    <g id="icon-control">
+      <circle cx="0" cy="2" r="16" fill="#e2e8f0" stroke="#334155" stroke-width="1.8"/>
+      <path d="M -3 -14 L 5 -18 L 3 -10" fill="none" stroke="#334155" stroke-width="1.8"/>
+    </g>
+    <g id="icon-entity">
+      <circle cx="0" cy="-2" r="16" fill="#e2e8f0" stroke="#334155" stroke-width="1.8"/>
+      <line x1="-17" y1="16" x2="17" y2="16" stroke="#334155" stroke-width="2"/>
+    </g>
+  </defs>
+
+  <rect width="1620" height="790" fill="#ffffff"/>
+  <text x="810" y="24" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#1e3a8a">UML SEQUENCE: TẠO YÊU CẦU, ĐỊNH TUYẾN PHÒNG BAN, KESTRA &amp; THÔNG BÁO REALTIME</text>
+  
+        <line x1="115" y1="112" x2="115" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-actor" x="115" y="66"/>
+        <text x="115" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Sinh viên (sinhvien)</text>
+        <text x="115" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Sinh viên (sinhvien)</text>
+        <use href="#icon-actor" x="115" y="760"/>
+      
+
+        <line x1="350" y1="112" x2="350" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-boundary" x="350" y="66"/>
+        <text x="350" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Cổng UniRequest (PWA)</text>
+        <text x="350" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Cổng UniRequest (PWA)</text>
+        <use href="#icon-boundary" x="350" y="754"/>
+      
+
+        <line x1="590" y1="112" x2="590" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-boundary" x="590" y="66"/>
+        <text x="590" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Kong Gateway (:8000)</text>
+        <text x="590" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Kong Gateway (:8000)</text>
+        <use href="#icon-boundary" x="590" y="754"/>
+      
+
+        <line x1="825" y1="112" x2="825" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-control" x="825" y="66"/>
+        <text x="825" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">RequestController</text>
+        <text x="825" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">RequestController</text>
+        <use href="#icon-control" x="825" y="754"/>
+      
+
+        <line x1="1070" y1="112" x2="1070" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-control" x="1070" y="66"/>
+        <text x="1070" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Request &amp; Noti Service</text>
+        <text x="1070" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">Request &amp; Noti Service</text>
+        <use href="#icon-control" x="1070" y="754"/>
+      
+
+        <line x1="1320" y1="112" x2="1320" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-boundary" x="1320" y="66"/>
+        <text x="1320" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">MinIO S3 / Kestra (:8085)</text>
+        <text x="1320" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">MinIO S3 / Kestra (:8085)</text>
+        <use href="#icon-boundary" x="1320" y="754"/>
+      
+
+        <line x1="1525" y1="112" x2="1525" y2="702" stroke="#64748b" stroke-width="1.3" stroke-dasharray="5,5"/>
+        <use href="#icon-entity" x="1525" y="66"/>
+        <text x="1525" y="100" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">PostgreSQL 16</text>
+        <text x="1525" y="720" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" font-weight="bold" fill="#0f172a">PostgreSQL 16</text>
+        <use href="#icon-entity" x="1525" y="754"/>
+      
+  
+        <rect x="310" y="170" width="1050" height="86" fill="none" stroke="#0f172a" stroke-width="1.8"/>
+        <polygon points="310,170 368,170 368,188 358,196 310,196" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5"/>
+        <text x="336" y="188" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">opt</text>
+        <text x="378" y="188" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">[Có đính kèm tệp minh chứng &lt;= 20MB]</text>
+        
+      
+
+        <rect x="780" y="452" width="580" height="122" fill="none" stroke="#0f172a" stroke-width="1.8"/>
+        <polygon points="780,452 838,452 838,470 828,478 780,478" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5"/>
+        <text x="806" y="470" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">alt</text>
+        <text x="848" y="470" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">[Kết nối Kestra Engine (:8085) ổn định]</text>
+        <line x1="780" y1="522" x2="1360" y2="522" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="6,4"/>
+           <text x="792" y="540" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">[Kestra timeout / khởi động (Fallback OLTP)]</text>
+      
+  
+        <line x1="115" y1="148" x2="350" y2="148" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="133.25" y="130" width="198.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="232.5" y="142" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">1</tspan> Chọn Phòng ban &amp; Danh mục</text>
+      
+
+        <line x1="350" y1="212" x2="590" y2="212" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="335" y="194" width="270" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="470" y="206" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">2</tspan> POST /api/upload (Bearer JWT + file)</text>
+      
+
+        <line x1="590" y1="230" x2="1320" y2="230" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="803.75" y="212" width="302.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="955" y="224" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">3</tspan> putObject(RAM Buffer -&gt; unirequest-files)</text>
+      
+
+        <line x1="1320" y1="246" x2="350" y2="246" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>
+        <rect x="742.25" y="228" width="185.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="835" y="240" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">4</tspan> 200 OK + attachment_url</text>
+      
+
+        <line x1="350" y1="288" x2="590" y2="288" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="263.5" y="270" width="413" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="470" y="282" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">5</tspan> POST /api/requests (target_department, category, priority)</text>
+      
+
+        <line x1="590" y1="314" x2="825" y2="314" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="562.75" y="296" width="289.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="707.5" y="308" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">6</tspan> Rate-Limit + X-Correlation-ID + Forward</text>
+      
+
+          <path d="M 825 334 L 871 334 L 871 358 L 827 358" fill="none" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+          <text x="879" y="349" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">7</tspan> verifyKeycloakJwt() &amp; validateGroup + Poka-yoke</text>
+        
+
+        <line x1="825" y1="384" x2="1070" y2="384" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="812.5" y="366" width="270" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="947.5" y="378" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">8</tspan> createRequest(dto, createdBy, roles)</text>
+      
+
+        <line x1="1070" y1="410" x2="1525" y2="410" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="1130" y="392" width="335" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="1297.5" y="404" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">9</tspan> INSERT requests + request_audit_logs (CREATED)</text>
+      
+
+        <line x1="1525" y1="436" x2="1070" y2="436" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>
+        <rect x="1165.75" y="418" width="263.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="1297.5" y="430" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">10</tspan> Trả về bản ghi RequestEntity (UUID)</text>
+      
+
+        <line x1="1070" y1="490" x2="1320" y2="490" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="1027.5" y="472" width="335" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="1195" y="484" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">11</tspan> POST Webhook unirequest-lifecycle (Basic Auth)</text>
+      
+
+        <line x1="1320" y1="512" x2="1070" y2="512" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>
+        <rect x="1037.25" y="494" width="315.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="1195" y="506" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">12</tspan> 200 OK + executionId (phân tuyến Ban + SLA)</text>
+      
+
+          <path d="M 1070 540 L 1116 540 L 1116 564 L 1072 564" fill="none" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+          <text x="1124" y="555" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">13</tspan> Log warning, bảo toàn bản ghi PENDING</text>
+        
+
+        <line x1="1070" y1="602" x2="1525" y2="602" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
+        <rect x="1087.75" y="584" width="419.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="1297.5" y="596" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">14</tspan> INSERT notifications (recipient_department = Ban tiếp nhận)</text>
+      
+
+        <line x1="1070" y1="632" x2="350" y2="632" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>
+        <rect x="549" y="614" width="322" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="710" y="626" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">15</tspan> Emit Socket.IO dept:&lt;group&gt; + Web Push VAPID</text>
+      
+
+        <line x1="825" y1="660" x2="350" y2="660" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>
+        <rect x="403.75" y="642" width="367.5" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="587.5" y="654" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">16</tspan> 201 Created + RequestEntity + workflow_execution_id</text>
+      
+
+        <line x1="350" y1="686" x2="115" y2="686" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>
+        <rect x="130" y="668" width="205" height="15" fill="#ffffff" opacity="0.92"/>
+        <text x="232.5" y="680" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">17</tspan> Cập nhật Lịch sử (PENDING)</text>
+      
+</svg>

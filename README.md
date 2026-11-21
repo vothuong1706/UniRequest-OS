@@ -124,43 +124,70 @@ Hệ thống tuân thủ nguyên lý **phân tách 2 tầng Open-Core**:
      - [unirequest-daily-report.yml](config/kestra/flows/unirequest-daily-report.yml): Lịch chạy `17:30` hằng ngày (`30 17 * * *`, múi giờ `Asia/Ho_Chi_Minh`) chạy song song thống kê theo phòng ban & KPI, chuyển CSV (`IonToCsv`) và upload thẳng lên MinIO.
 2. **Tầng 2 - Ứng dụng Nghiệp vụ (`apps/demo-app`, `apps/backend-api`):** Toàn bộ giao tiếp REST & Socket.IO đi qua cổng Kong `:8000`; Backend xác minh JWT RS256 từ Public Key của Keycloak, phân giải phạm vi phòng ban (`ALL` / `DEPARTMENT` / `PERSONAL`), ghi lịch sử xử lý, phát sự kiện realtime/Web Push theo đúng phòng ban và giao tiếp hai chiều với Kestra.
 
-<details>
-<summary><strong>Xem thêm: Sơ đồ tuần tự (Mermaid Sequence Diagram)</strong></summary>
+### Bộ Sơ đồ UML 2.x Chuẩn Kiến trúc (BCE Sequence, Use Case, State, Class & Deployment)
 
+> Toàn bộ sơ đồ UML 2.x dưới đây tuân thủ ký hiệu chuẩn (Actor / Boundary / Control / Entity kèm `opt`, `alt`/`else` và đánh số thứ tự lời gọi `1..17` đồng bộ cả đầu trên và chân dưới lifeline):
+
+![UML Sequence Diagram chuẩn BCE: Tạo yêu cầu, Định tuyến Phòng ban, Kestra & Thông báo Realtime](docs/images/uml-sequence-lifecycle.svg)
+
+![UML Sequence Diagram chuẩn BCE: Kestra SLA Watchdog quét quá hạn và bắn cảnh báo đúng Ban](docs/images/uml-sequence-sla.svg)
+
+<details>
+<summary><strong>Xem thêm: Bộ sơ đồ UML Use Case, State Machine, Class, Deployment &amp; Mã Mermaid UML 2.x</strong></summary>
+
+#### 1. UML Use Case Diagram
+![UML Use Case: Hệ thống UniRequest-OS](docs/images/uml-usecase.svg)
+
+#### 2. UML State Machine Diagram (Vòng đời trạng thái &amp; Xóa độc lập 2 phía)
+![UML State Machine: Vòng đời Yêu cầu](docs/images/uml-state.svg)
+
+#### 3. UML Class Diagram (Các lớp nghiệp vụ &amp; dịch vụ Backend)
+![UML Class Diagram: Các lớp Backend](docs/images/uml-class.svg)
+
+#### 4. UML Deployment Diagram (Docker Compose 2 tầng &amp; UTC+7)
+![UML Deployment Diagram: Docker Compose](docs/images/uml-deployment.svg)
+
+#### 5. Mã nguồn Mermaid UML 2.x (Sequence với `activate`/`deactivate`, `opt`, `alt/else`)
 ```mermaid
 sequenceDiagram
     autonumber
     actor SV as Sinh viên (sinhvien)
-    participant FE as UniRequest Portal / PWA (:3000)
-    participant KONG as Kong Gateway (:8000)
-    participant KC as Keycloak SSO (:8080)
-    participant BE as Backend API + Socket.IO (:4000)
-    participant S3 as MinIO S3 (:9000)
-    participant PG as PostgreSQL 16 (:5432)
-    participant KS as Kestra Engine (:8085)
+    participant FE as Boundary: UniRequest Portal (:3000)
+    participant KONG as Boundary: Kong Gateway (:8000)
+    participant CTRL as Control: RequestController
+    participant SVC as Control: Request &amp; Noti Service
+    participant EXT as Boundary: MinIO / Kestra (:8085)
+    database PG as Entity: PostgreSQL 16
 
-    SV->>FE: Đăng nhập & chọn Phòng ban (/api/departments) + Danh mục
-    FE->>KONG: /auth (OIDC PKCE S256)
-    KONG->>KC: Xác thực & cấp JWT RS256 (roles + groups)
-    KC-->>FE: Access Token (realm_access.roles, groups)
-    FE<-->KONG: WS /api/socket.io (JWT RS256)
-    KONG<-->BE: Join room user:<id> & dept:<group>
+    SV->>+FE: 1. Chọn Phòng ban (/api/departments), Danh mục & nội dung
+    opt Có tệp đính kèm (<= 20MB)
+        FE->>+KONG: 2. POST /api/upload (Bearer JWT + file)
+        KONG->>+EXT: 3. putObject(RAM Buffer -> unirequest-files)
+        EXT-->>-FE: 4. 200 OK + attachment_url
+        deactivate KONG
+    end
 
-    FE->>KONG: POST /api/upload (Bearer JWT + tệp)
-    KONG->>BE: Forward + X-Correlation-ID + Rate-Limit
-    BE->>S3: putObject(RAM Buffer -> unirequest-files)
-    S3-->>BE: Public S3 URL
+    FE->>+KONG: 5. POST /api/requests (target_department, category, priority)
+    KONG->>+CTRL: 6. Verify Rate-Limit + X-Correlation-ID + Forward JWT
+    CTRL->>CTRL: 7. verifyKeycloakJwt() & validateGroup + Poka-yoke
+    CTRL->>+SVC: 8. createRequest(dto, createdBy, roles)
+    SVC->>+PG: 9. INSERT requests + request_audit_logs (CREATED)
+    PG-->>-SVC: 10. Trả về RequestEntity (UUID)
 
-    FE->>KONG: POST /api/requests (title, target_department, category, priority, attachment_url)
-    KONG->>BE: Forward + JWT Verify + Validation
-    BE->>PG: INSERT requests + audit_logs + notifications (recipient_department)
-    BE->>KS: POST Webhook -> unirequest-lifecycle
-    KS-->>BE: executionId (phân tuyến phòng ban + SLA + query DB)
-    BE-->>FE: 201 Created + Emit Socket.IO & Web Push đúng Ban phụ trách
+    alt Kết nối Kestra Engine (:8085) ổn định
+        SVC->>+EXT: 11. POST Webhook unirequest-lifecycle (Basic Auth)
+        EXT-->>-SVC: 12. 200 OK + executionId (phân tuyến Ban + SLA)
+    else Kestra timeout / khởi động (Fallback OLTP)
+        SVC->>SVC: 13. Log warning, bảo toàn bản ghi PENDING trong PostgreSQL
+    end
 
-    KS->>BE: Cron 15p (unirequest-sla-watchdog) -> POST /api/internal/kestra/sla-alert
-    BE->>PG: Ghi SLA_WARNING + Bắn thông báo URGENT đúng Ban
-    KS->>S3: Cron 17:30 (unirequest-daily-report) -> Upload CSV (reports/daily/*.csv)
+    SVC->>+PG: 14. INSERT notifications (recipient_department = Ban tiếp nhận)
+    PG-->>-SVC: 15. OK
+    SVC-->>FE: 16. Emit Socket.IO dept:<group> + Web Push VAPID
+    deactivate SVC
+    CTRL-->>-FE: 17. 201 Created + RequestEntity
+    deactivate KONG
+    FE-->>-SV: 18. Cập nhật Lịch sử &amp; hiển thị PENDING
 ```
 
 </details>
