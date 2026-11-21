@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
+import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { notificationService } from '../services/notification-service.js';
-import { hasElevatedRole } from '../services/request-service.js';
+import { resolveRequestAccessScope } from '../services/request-service.js';
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -16,11 +17,14 @@ export class NotificationController {
 
       const limit = Number(req.query.limit) || 40;
       const unreadOnly = req.query.unread === 'true';
-      const isStaff = hasElevatedRole(user.roles);
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      const scope = resolveRequestAccessScope({ ...user, groups: resolvedGroups });
 
       const data = await notificationService.listForUser(
         user.preferred_username,
-        isStaff,
+        scope,
         { limit, unreadOnly }
       );
 
@@ -114,11 +118,14 @@ export class NotificationController {
         return;
       }
 
-      const isStaff = hasElevatedRole(user.roles);
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      const scope = resolveRequestAccessScope({ ...user, groups: resolvedGroups });
       await notificationService.markReadByRequest(
         requestId,
         user.preferred_username,
-        isStaff
+        scope
       );
       res.status(200).json({ success: true });
     } catch (error) {
@@ -134,8 +141,11 @@ export class NotificationController {
         return;
       }
 
-      const isStaff = hasElevatedRole(user.roles);
-      await notificationService.markAllRead(user.preferred_username, isStaff);
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      const scope = resolveRequestAccessScope({ ...user, groups: resolvedGroups });
+      await notificationService.markAllRead(user.preferred_username, scope);
       res.status(200).json({ success: true });
     } catch (error) {
       next(error);

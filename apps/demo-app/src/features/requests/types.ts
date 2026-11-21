@@ -2,10 +2,24 @@ export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type RequestPriority = 'NORMAL' | 'HIGH' | 'URGENT';
 
+export type RequestDeleteMode = 'history' | 'manage';
+
+export type TargetDepartment = string;
+
+export interface DepartmentGroupItem {
+  id: string;
+  name: string;
+  path: string;
+  display_label: string;
+  parent_path: string | null;
+  depth: number;
+  sub_group_count: number;
+}
+
 export type StatusFilter = 'ALL' | RequestStatus;
 
 export type AuditAction =
-  'CREATED' | 'APPROVED' | 'REJECTED' | 'PENDING' | 'WORKFLOW_DISPATCHED';
+  'CREATED' | 'APPROVED' | 'REJECTED' | 'PENDING' | 'WORKFLOW_DISPATCHED' | 'SLA_WARNING';
 
 export interface RequestCategoryItem {
   id: string;
@@ -44,6 +58,7 @@ export interface RequestItem {
   description: string | null;
   category?: string;
   custom_category_label?: string | null;
+  target_department?: string | null;
   priority?: RequestPriority;
   status: RequestStatus;
   created_by: string;
@@ -52,6 +67,8 @@ export interface RequestItem {
   review_note?: string | null;
   reviewed_at?: string | null;
   workflow_execution_id?: string | null;
+  hidden_by_sender?: boolean;
+  hidden_by_receiver?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +95,7 @@ export interface CreateRequestPayload {
   description?: string;
   category: string;
   custom_category_label?: string;
+  target_department: TargetDepartment;
   priority: RequestPriority;
   attachment_url?: string;
 }
@@ -98,7 +116,7 @@ export interface CategoryAnalyticsItem {
 }
 
 export interface RequestAnalytics {
-  scope: 'ALL' | 'PERSONAL';
+  scope: 'ALL' | 'DEPARTMENT' | 'PERSONAL';
   total: number;
   by_status: Record<RequestStatus, number>;
   categories: CategoryAnalyticsItem[];
@@ -124,7 +142,11 @@ export interface RequestCommentItem {
 }
 
 export type NotificationType =
-  'REQUEST_CREATED' | 'REQUEST_APPROVED' | 'REQUEST_REJECTED' | 'COMMENT_ADDED';
+  | 'REQUEST_CREATED'
+  | 'REQUEST_APPROVED'
+  | 'REQUEST_REJECTED'
+  | 'COMMENT_ADDED'
+  | 'SLA_WARNING';
 
 export type NotificationSeverity = 'INFO' | 'SUCCESS' | 'WARNING' | 'URGENT';
 

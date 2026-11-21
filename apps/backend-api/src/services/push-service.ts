@@ -1,6 +1,7 @@
 import webPush from 'web-push';
 import { query } from '../config/database.js';
 import { config } from '../config/environment.js';
+import { canReviewRequest } from './request-service.js';
 
 let vapidConfigured = false;
 
@@ -34,6 +35,8 @@ export interface PushSubscriptionInput {
 interface StoredPushSubscription {
   id: string;
   username: string;
+  roles: string[];
+  groups: string[];
   endpoint: string;
   p256dh: string;
   auth: string;
@@ -56,15 +59,17 @@ export class PushService {
   async saveSubscription(
     username: string,
     roles: string[],
+    groups: string[],
     subscription: PushSubscriptionInput,
     userAgent?: string
   ): Promise<void> {
     const sql = `
-      INSERT INTO push_subscriptions (username, roles, endpoint, p256dh, auth, user_agent)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO push_subscriptions (username, roles, groups, endpoint, p256dh, auth, user_agent)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (endpoint) DO UPDATE
       SET username = EXCLUDED.username,
           roles = EXCLUDED.roles,
+          groups = EXCLUDED.groups,
           p256dh = EXCLUDED.p256dh,
           auth = EXCLUDED.auth,
           user_agent = EXCLUDED.user_agent,
@@ -73,6 +78,7 @@ export class PushService {
     await query(sql, [
       username,
       roles,
+      groups,
       subscription.endpoint,
       subscription.keys.p256dh,
       subscription.keys.auth,
@@ -136,17 +142,28 @@ export class PushService {
 
   async sendToStaff(
     payload: WebPushPayload,
+    targetDepartment?: string | null,
     excludeUsername?: string
   ): Promise<void> {
     try {
       const result = await query(
-        `SELECT id, username, endpoint, p256dh, auth
+        `SELECT id, username, roles, groups, endpoint, p256dh, auth
          FROM push_subscriptions
-         WHERE roles && ARRAY['canbo', 'giangvien', 'admin']::text[]
+         WHERE (roles && ARRAY['canbo', 'giangvien', 'admin']::text[] OR cardinality(groups) > 0)
            AND ($1::text IS NULL OR username <> $1);`,
         [excludeUsername || null]
       );
-      await this.dispatchToRows(result.rows as StoredPushSubscription[], payload);
+      const rows = (result.rows as StoredPushSubscription[]).filter((sub) =>
+        canReviewRequest(
+          {
+            preferred_username: sub.username,
+            roles: sub.roles || [],
+            groups: sub.groups || [],
+          },
+          { target_department: targetDepartment ?? null }
+        )
+      );
+      await this.dispatchToRows(rows, payload);
     } catch (error) {
       console.warn('[WebPush] Không thể gửi thông báo đẩy tới cán bộ:', error);
     }

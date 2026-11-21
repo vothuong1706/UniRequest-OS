@@ -36,6 +36,9 @@ jobs:
       - name: Prettier format check
         run: npm run format:check
 
+      - name: Run Frontend Unit Tests (Vitest)
+        run: npm test
+
       - name: Production Vite build
         run: npm run build
 
@@ -62,6 +65,9 @@ jobs:
       - name: TypeScript compile check
         run: npm run build
 
+      - name: Run Backend Unit & Route Tests (Vitest)
+        run: npm test
+
   infra-and-oss-compliance:
     name: Infra, GitOps Flows & Open-Source Compliance
     runs-on: ubuntu-latest
@@ -81,17 +87,47 @@ jobs:
           assert os.path.isfile('LICENSE'), 'Missing LICENSE file'
           assert 'Apache License' in open('LICENSE', encoding='utf-8').read()
 
-          # 2. Validate Keycloak realm export JSON
+          # 2. Validate Keycloak realm export JSON (roles, groups & OIDC groups mapper)
           with open('config/keycloak/realm-export.json', encoding='utf-8') as f:
               realm = json.load(f)
           assert realm.get('realm') == 'unirequest'
+          assert len(realm.get('groups', [])) >= 1, 'Missing default groups in realm-export.json'
+          portal_client = next((c for c in realm.get('clients', []) if c.get('clientId') == 'unirequest-portal'), None)
+          assert portal_client, 'Missing unirequest-portal client'
+          mappers = {m.get('protocolMapper') for m in portal_client.get('protocolMappers', [])}
+          assert 'oidc-group-membership-mapper' in mappers, 'Missing oidc-group-membership-mapper'
 
-          # 3. Validate Kestra YAML workflow exists & non-empty
-          flow_path = 'config/kestra/flows/unirequest-lifecycle.yml'
-          assert os.path.isfile(flow_path)
-          flow_text = open(flow_path, encoding='utf-8').read()
-          assert 'id: unirequest-lifecycle' in flow_text
-          assert 'namespace: unirequest.dxos' in flow_text
+          # 3. Validate all Kestra YAML workflows & PostgreSQL init sequence
+          try:
+              import yaml
+          except ImportError:
+              yaml = None
+
+          expected_flows = [
+              'unirequest-lifecycle',
+              'unirequest-sla-watchdog',
+              'unirequest-daily-report',
+          ]
+          flow_files = sorted(glob.glob('config/kestra/flows/*.yml'))
+          assert len(flow_files) >= len(expected_flows), 'Missing Kestra YAML workflow files'
+          found_ids = set()
+          for fp in flow_files:
+              flow_text = open(fp, encoding='utf-8').read()
+              if yaml is not None:
+                  parsed = yaml.safe_load(flow_text)
+                  assert isinstance(parsed, dict), f'Invalid YAML object in {fp}'
+                  assert parsed.get('namespace') == 'unirequest.dxos', f'Wrong namespace in {fp}'
+                  found_ids.add(parsed.get('id'))
+              else:
+                  assert 'namespace: unirequest.dxos' in flow_text, f'Missing namespace in {fp}'
+                  m = re.search(r'^id:\s*(\S+)', flow_text, re.M)
+                  assert m, f'Missing id in {fp}'
+                  found_ids.add(m.group(1))
+          for eid in expected_flows:
+              assert eid in found_ids, f'Missing expected Kestra flow id: {eid}'
+
+          sql_files = sorted(glob.glob('config/postgres/init/*'))
+          assert len(sql_files) >= 10, f'Expected >= 10 Postgres init scripts, found {len(sql_files)}'
 
           # 4. Validate all SVG files are well-formed XML
           svgs = sorted(glob.glob('docs/images/*.svg'))

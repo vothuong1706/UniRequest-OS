@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { pushService, type PushSubscriptionInput } from '../services/push-service.js';
 
 export class PushController {
@@ -32,9 +33,13 @@ export class PushController {
         return;
       }
 
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
       await pushService.saveSubscription(
         user.preferred_username,
         user.roles,
+        resolvedGroups,
         {
           endpoint: body.endpoint,
           keys: { p256dh: body.keys.p256dh, auth: body.keys.auth },

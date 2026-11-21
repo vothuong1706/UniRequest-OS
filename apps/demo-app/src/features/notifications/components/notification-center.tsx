@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { NotificationItem } from '@/features/requests/types';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, isSameDayInAppTimezone } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 interface NotificationCenterProps {
@@ -34,14 +34,7 @@ interface NotificationCenterProps {
 }
 
 function isSameDay(isoDate: string): boolean {
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) return false;
-  const now = new Date();
-  return (
-    date.getDate() === now.getDate() &&
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear()
-  );
+  return isSameDayInAppTimezone(isoDate);
 }
 
 function NotificationIcon({ item }: { item: NotificationItem }) {

@@ -1,4 +1,20 @@
-import type { RequestCategoryItem, RequestItem, RequestPriority } from '../types';
+import type {
+  DepartmentGroupItem,
+  RequestCategoryItem,
+  RequestItem,
+  RequestPriority,
+} from '../types';
+
+export function getTargetDepartmentLabel(
+  code?: string | null,
+  departments: DepartmentGroupItem[] = []
+): string | null {
+  if (!code) return null;
+  const normalized = code.trim().replace(/^\/+/, '');
+  if (!normalized) return null;
+  const matched = departments.find((d) => d.path === normalized);
+  return matched?.display_label ?? normalized.split('/').join(' / ');
+}
 
 export interface PriorityOption {
   value: RequestPriority;
@@ -93,21 +109,28 @@ export function resolveCategoryDisplay(
 
 export function resolveRequestDisplay(
   req: RequestItem,
-  categories: RequestCategoryItem[] = []
+  categories: RequestCategoryItem[] = [],
+  departments: DepartmentGroupItem[] = []
 ): {
   categoryCode: string;
   categoryLabel: string;
   department: string;
+  targetDepartmentLabel: string | null;
   priority: RequestPriority;
   cleanDescription: string;
 } {
   const parsed = parseDescriptionPriority(req.description);
   const { label, department } = resolveCategoryDisplay(req, categories);
+  const targetDepartmentLabel = getTargetDepartmentLabel(
+    req.target_department,
+    departments
+  );
 
   return {
     categoryCode: req.category ?? 'OTHER',
     categoryLabel: label,
-    department,
+    department: targetDepartmentLabel ?? department,
+    targetDepartmentLabel,
     priority: req.priority ?? parsed.priority,
     cleanDescription: parsed.cleanDescription,
   };

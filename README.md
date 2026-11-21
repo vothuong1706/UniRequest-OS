@@ -11,17 +11,18 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache--2.0-2563eb?style=flat-square" alt="Apache-2.0 License"></a>
-  <img src="https://img.shields.io/badge/OSI_FOSS-100%25_Open--Source-0f172a?style=flat-square" alt="100% OSI Open Source">
-  <img src="https://img.shields.io/badge/Workflow-Kestra_Apache--2.0-d97706?style=flat-square" alt="Kestra Apache-2.0">
+  <img src="https://img.shields.io/badge/Version-v0.7.0-0f172a?style=flat-square" alt="Version v0.7.0">
+  <img src="https://img.shields.io/badge/Workflow-Kestra_3_Flows-d97706?style=flat-square" alt="Kestra 3 Flows">
+  <img src="https://img.shields.io/badge/Routing-Keycloak_Groups-7c3aed?style=flat-square" alt="Keycloak Groups Routing">
   <img src="https://img.shields.io/badge/Realtime-Socket.IO_%2B_PWA-059669?style=flat-square" alt="Socket.IO + PWA">
   <img src="https://img.shields.io/badge/Deploy-Docker_Compose_1_Command-0284c7?style=flat-square" alt="Docker Compose">
 </p>
 
 ![UniRequest-OS - Nền tảng Chuyển đổi số Cổng Dịch vụ Đại học](docs/images/banner.jpg)
 
-**UniRequest-OS** là nền tảng nguồn mở kiến trúc 2 tầng tách biệt giúp các trường đại học số hóa toàn bộ quy trình tiếp nhận yêu cầu từ sinh viên và giảng viên, quản lý danh mục yêu cầu động theo phòng ban, lưu trữ tệp đính kèm S3, trao đổi trực tiếp theo thời gian thực, thông báo đa kênh (In-App + Web Push), hỗ trợ cài đặt ứng dụng PWA và tự động điều phối bằng Workflow Engine.
+**UniRequest-OS** là nền tảng nguồn mở kiến trúc 2 tầng tách biệt giúp các trường đại học số hóa toàn bộ quy trình tiếp nhận yêu cầu từ sinh viên và giảng viên: định tuyến động theo cây phòng ban/nhóm Keycloak, quản lý danh mục độc lập theo từng ban, xóa yêu cầu hai phía không xung đột dữ liệu, lưu trữ tệp đính kèm S3, trao đổi trực tiếp theo thời gian thực, thông báo tách theo ban (In-App + Web Push), cài đặt ứng dụng PWA và tự động hóa 3 luồng quy trình trên Kestra Workflow Engine.
 
-**University Digital Service Portal:** a decoupled two-tier open-source platform that digitizes university service requests with dynamic database-driven categories, S3 attachment storage, realtime Socket.IO messaging and notifications, installable PWA with Web Push (VAPID), declarative GitOps workflow routing, and auditable role-based approvals for students, lecturers, and administrative staff.
+**University Digital Service Portal:** a decoupled two-tier open-source platform that digitizes university service requests with dynamic Keycloak-group department routing, department-scoped categories, non-destructive two-sided soft deletion, S3 attachment storage, realtime Socket.IO messaging and department-scoped notifications, installable PWA with Web Push (VAPID), and a 3-flow Kestra automation pack (realtime webhook routing, 15-minute SLA watchdog, and daily MinIO CSV reporting).
 
 **English readers:** every section below includes an English summary. To spin up the full stack in one command, jump straight to [Quick start (English)](#-quick-start-english).
 
@@ -58,45 +59,49 @@ At many universities, thousands of student and faculty requests - enrollment cer
 
 ![Chuỗi tiến hóa H-P-D-I của UniRequest-OS: Con người số, Quy trình tự động, Dữ liệu thực chứng và Định hướng Trí tuệ số](docs/images/hpdi-overview.jpg)
 
-- **Danh mục yêu cầu động 100% từ cơ sở dữ liệu:** Cài sẵn 9 nhóm dịch vụ đại học thực tế trong bảng `request_categories`; Cán bộ/Quản trị viên có thể tự thêm, sửa, lọc (*Tất cả / Đang bật / Đang ẩn*), bật/tắt danh mục và cấu hình phòng ban phụ trách + thời hạn SLA ngay trên giao diện **Danh mục** mà không cần sửa code. Biểu mẫu hỗ trợ Combobox tìm kiếm nhanh và tự nhập tên yêu cầu cụ thể khi chọn *"Yêu cầu khác"*.
-- **Realtime Socket.IO, Trung tâm Thông báo & Web Push (VAPID):** Kết nối thời gian thực đi qua cổng **Kong Gateway** (`/api/socket.io`) xác thực bằng Keycloak JWT RS256. Thông báo lưu trạng thái đọc/chưa đọc/ẩn độc lập theo từng tài khoản (`notification_reads`), tự động đánh dấu đã đọc khi người dùng mở xem yêu cầu, đồng bộ đa tab tức thì và hỗ trợ đẩy thông báo hệ điều hành ngoài trình duyệt.
-- **Trao đổi trực tiếp trong từng yêu cầu & PWA cài đặt được:** Sinh viên và cán bộ trao đổi hai chiều theo thời gian thực ngay trong chi tiết yêu cầu (`request_comments`). Ứng dụng web đóng gói chuẩn **PWA (`vite-plugin-pwa` + Workbox)** cho phép cài đặt lên màn hình chính Desktop/Mobile kèm cảnh báo Ngoại tuyến an toàn (không cache `/auth` hay API bảo mật).
-- **Kiến trúc 2 tầng Open-Core & Tự động hóa GitOps YAML (Kestra Apache-2.0):** Toàn bộ Tầng 1 chạy ngầm (*headless*) qua Docker Compose; phân tuyến phòng ban và mức SLA được khai báo bằng tệp YAML độc lập.
-- **Giao diện tối giản theo vai trò:** Tự động hiển thị đúng ngữ cảnh theo vai trò (*Cổng dịch vụ sinh viên*, *Cổng giảng viên*, *Cổng điều hành cán bộ*, *Quản trị hệ thống*), tách biệt Dashboard tối giản cho Sinh viên và biểu đồ xu hướng 7 ngày + phân bổ danh mục cho Cán bộ.
+- **Định tuyến động theo cây Group Keycloak (`GET /api/departments`):** Tự động đồng bộ cấu trúc phòng ban và nhóm con từ Keycloak Admin API (ví dụ `CTSV`, `KETOAN`, `Lớp/K11A1`) thay cho danh sách cố định. Sinh viên chọn đúng phòng ban tiếp nhận (`target_department`); cán bộ/giảng viên thuộc Group nào chỉ xem, lọc, nhận thông báo và xử lý yêu cầu thuộc Group đó hoặc Group con bên trong.
+- **Danh mục yêu cầu động tách riêng theo từng Phòng ban:** Mỗi phòng ban tự tạo, chỉnh sửa, bật/tắt và xóa hàng loạt (qua Checkbox) các loại thủ tục thuộc phạm vi của ban mình trong `request_categories`, kèm thời hạn SLA và ràng buộc minh chứng. Form gửi yêu cầu tự lọc danh mục theo phòng ban đang chọn và hỗ trợ nhập loại tùy chỉnh (*"Yêu cầu khác"*).
+- **Xóa yêu cầu độc lập hai phía (`hidden_by_sender` / `hidden_by_receiver`):** Hỗ trợ chọn nhiều bằng Checkbox để xóa gọn lịch sử/hàng đợi mà không gây mất dữ liệu phía đối diện - người nhận xóa không làm mất đơn của người gửi và ngược lại; bản ghi chỉ `DELETE` vĩnh viễn khỏi PostgreSQL khi cả hai phía đều đã xóa.
+- **Realtime Socket.IO, Thông báo tách theo Ban & Web Push (VAPID):** Kết nối thời gian thực đi qua cổng **Kong Gateway** (`/api/socket.io`) xác thực bằng Keycloak JWT RS256. Thông báo gắn `recipient_department` và `push_subscriptions.groups` để bắn đúng chuông/thiết bị của Ban phụ trách, lưu trạng thái đọc/ẩn độc lập theo từng tài khoản (`notification_reads`) và đồng bộ đa tab tức thì.
+- **Trao đổi trực tiếp, PWA cài đặt được & UI tối giản rõ nét:** Sinh viên và cán bộ trao đổi hai chiều trong chi tiết yêu cầu (`request_comments`); ứng dụng web đóng gói chuẩn **PWA (`vite-plugin-pwa` + Workbox)** an toàn (không cache `/auth` hay API bảo mật), giao diện lược bỏ mô tả rườm rà và dùng viền focus đỏ `3px` dễ nhận diện trên các ô nhập liệu.
+- **Bộ 3 Workflow Tự động hóa Kestra (GitOps YAML · Apache-2.0):** Ngoài luồng Webhook realtime (`unirequest-lifecycle`), hệ thống trang bị thêm Watchdog giám sát SLA quá hạn mỗi 15 phút (`unirequest-sla-watchdog` gọi callback nội bộ bắn cảnh báo khẩn `SLA_WARNING`) và báo cáo CSV tổng hợp cuối ngày lưu thẳng lên MinIO (`unirequest-daily-report`).
 
 *English:*
-- **100% Database-driven dynamic categories:** Ships with 9 university service categories in `request_categories`; staff can add, edit, filter, or toggle categories, assigned departments, SLA targets, and evidence requirements live from the UI.
-- **Realtime Socket.IO, Per-user Notification Center & Web Push (VAPID):** Zero-Trust Socket.IO through Kong (`/api/socket.io`) with Keycloak JWT RS256, per-user read/unread/hide states, automatic read-on-open, multi-tab sync, and OS-level Web Push notifications.
-- **Inline Request Comments & Installable PWA:** Two-way realtime comments inside every request plus a Workbox App Shell PWA (never caching OIDC/auth or authenticated APIs).
-- **Reusable 2-Tier Open-Core & Kestra GitOps YAML:** Headless Tier 1 infrastructure services behind Kong with declarative workflow orchestration.
+- **Dynamic Keycloak Group Tree Routing (`GET /api/departments`):** Syncs hierarchical groups and subgroups from Keycloak Admin API (`CTSV`, `KETOAN`, `Lớp/K11A1`, etc.) so students route requests to the exact department and staff only access their own group/subgroups.
+- **Department-Scoped Dynamic Categories & Bulk Checkbox Actions:** Each department creates, filters, toggles, and bulk-deletes its own categories in `request_categories`, dynamically filtering the student request form by selected department.
+- **Two-Sided Independent Soft Delete (`hidden_by_sender` / `hidden_by_receiver`):** Bulk checkbox deletion from either sender or receiver hides the record only for that side until both sides delete it, triggering automatic physical DB cleanup.
+- **Department-Scoped Realtime Notifications, Inline Comments & Installable PWA:** Zero-Trust Socket.IO (`/api/socket.io`), per-user notification read states (`notification_reads`), department-targeted Web Push (VAPID), inline comments (`request_comments`), 3px red focus rings on inputs, and an offline-safe Workbox PWA.
+- **3-Flow Kestra Automation Pack (GitOps YAML · Apache-2.0):** Includes realtime department/SLA webhook routing, a 15-minute PostgreSQL SLA watchdog calling back `/api/internal/kestra/sla-alert` (`SLA_WARNING`), and a daily 17:30 MinIO CSV reporting flow.
 
 ---
 
 ## 👥 Đối tượng · Users
 
-| Đối tượng · *Who* | Mục đích sử dụng · *Uses it to* | Vai trò Keycloak · *Role* |
+| Đối tượng · *Who* | Mục đích sử dụng · *Uses it to* | Vai trò & Nhóm Keycloak · *Role / Group* |
 | :--- | :--- | :--- |
-| **Sinh viên** · *Students* | Đăng nhập một cửa, chọn danh mục yêu cầu, đính kèm ảnh/PDF, trao đổi trực tiếp, nhận thông báo realtime/Web Push và in phiếu xác nhận | `sinhvien` |
-| **Cán bộ phòng ban** · *Administrative Staff* | Quản lý toàn bộ yêu cầu, trao đổi & phê duyệt/từ chối kèm lý do, quản trị danh mục yêu cầu, theo dõi biểu đồ xu hướng 7 ngày | `canbo` |
-| **Giảng viên** · *Lecturers* | Tiếp nhận, trao đổi và phê duyệt các yêu cầu học vụ, quản trị danh mục liên quan | `giangvien` |
-| **Quản trị hệ thống** · *System Admin* | Quản trị phân quyền Keycloak, cấu hình danh mục & giám sát luồng xử lý Kestra | `admin` |
+| **Sinh viên** · *Students* | Đăng nhập một cửa, chọn phòng ban tiếp nhận & danh mục tương ứng, đính kèm ảnh/PDF, trao đổi trực tiếp, nhận thông báo realtime/Web Push, xóa lịch sử cá nhân và in phiếu xác nhận | `sinhvien` *(chỉ xem đơn của chính mình)* |
+| **Cán bộ phòng ban** · *Administrative Staff* | Tiếp nhận, trao đổi, phê duyệt/từ chối, nhận cảnh báo SLA quá hạn và quản trị danh mục theo đúng Group/Group con được phân (hoặc toàn trường nếu không gắn Group) | `canbo` + Keycloak Groups (`KETOAN`, `CTSV`...) |
+| **Giảng viên** · *Lecturers* | Tiếp nhận, trao đổi và phê duyệt các yêu cầu học vụ, quản trị danh mục trong phạm vi đơn vị/lớp phụ trách | `giangvien` + Keycloak Groups (`Lớp/K11A1`...) |
+| **Quản trị hệ thống** · *System Admin* | Quản trị phân quyền/Group Keycloak, giám sát toàn trường, cấu hình danh mục & theo dõi luồng tự động hóa Kestra | `admin` *(phạm vi toàn trường `ALL`)* |
 
 ---
 
 ## 📱 Chức năng · Features
 
-| Nhóm | Chức năng · *Feature* | Trạng thái (`v0.6.0`) |
+| Nhóm | Chức năng · *Feature* | Trạng thái (`v0.7.0`) |
 | :---: | :--- | :--- |
-| **Định danh** | **Đăng nhập tập trung SSO (Keycloak OIDC + PKCE S256)** | ✅ Không lưu mật khẩu trong DB ứng dụng; tự động gia hạn Bearer Token (`updateToken(30)`), tự nạp `realm-export.json` |
-| **Giao diện** | **Cổng dịch vụ tối giản (React 19 + Shadcn/UI + Radix)** | ✅ Logo 3D nền trong suốt tương thích cả Sáng/Tối, tự động nhận diện ngữ cảnh cổng theo vai trò (*Cổng dịch vụ sinh viên* / *Cổng giảng viên* / *Cổng điều hành cán bộ* / *Quản trị hệ thống*) |
-| **Realtime & Thông báo** | **Socket.IO qua Kong + Trung tâm Thông báo & Web Push (VAPID)** | ✅ Thông báo tức thì theo vòng đời yêu cầu & bình luận, lưu trạng thái đọc/chưa đọc/ẩn riêng từng người dùng (`notification_reads`), tự đánh dấu đọc khi mở yêu cầu, đồng bộ đa tab & đẩy thông báo ngoài trình duyệt |
+| **Định danh & Nhóm** | **Đăng nhập tập trung SSO (Keycloak OIDC + PKCE S256) & Cây Group** | ✅ Không lưu mật khẩu trong DB; trích xuất `roles` + `groups` từ JWT; đồng bộ động cây Group qua `/api/departments` |
+| **Định tuyến Phòng ban** | **Phân quyền 3 phạm vi (`ALL` / `DEPARTMENT` / `PERSONAL`)** | ✅ `admin` hoặc cán bộ không gắn Group xem toàn trường; cán bộ gắn Group (`KETOAN`, `Lớp/K11A1`...) chỉ xử lý đơn thuộc Group đó & Group con; `sinhvien` chỉ xem đơn của mình |
+| **Giao diện & UX** | **Cổng dịch vụ tối giản (React 19 + Shadcn/UI + Radix)** | ✅ Logo 3D nền trong suốt, Sáng/Tối, viền focus đỏ `3px` trên input/textarea, chọn nhiều bằng Checkbox (icon) để xóa hàng loạt |
+| **Xóa 2 phía** | **Ẩn/Xóa độc lập Người gửi - Người nhận (`hidden_by_sender/receiver`)** | ✅ Xóa ở tab *Lịch sử* không mất ở tab *Tiếp nhận* và ngược lại; tự động `DELETE` khỏi PostgreSQL khi cả 2 bên cùng xóa |
+| **Realtime & Thông báo** | **Socket.IO qua Kong + Thông báo tách theo Ban & Web Push (VAPID)** | ✅ Thông báo & Push gắn `recipient_department` và `groups` đúng đơn vị tiếp nhận; trạng thái đọc/ẩn riêng từng người (`notification_reads`); đồng bộ đa tab |
 | **Trao đổi** | **Bình luận trực tiếp trong chi tiết yêu cầu (`request_comments`)** | ✅ Trao đổi 2 chiều theo thời gian thực giữa người gửi và cán bộ phụ trách ngay trong hộp thoại chi tiết yêu cầu |
 | **PWA** | **Ứng dụng web cài đặt được (`vite-plugin-pwa` + Workbox)** | ✅ Cài đặt lên màn hình chính Desktop/Mobile, bộ icon từ Logo 3D, cache App Shell an toàn (không cache `/auth` hay API bảo mật), thanh trạng thái Ngoại tuyến |
-| **Danh mục động** | **Quản trị Danh mục yêu cầu (`request_categories` + `/api/categories`)** | ✅ 9 danh mục mặc định đại học, Combobox tìm kiếm thông minh, hỗ trợ nhập loại yêu cầu tùy chỉnh, CRUD + lọc *Tất cả / Đang bật / Đang ẩn* cho Cán bộ |
-| **Tệp đính kèm** | **Lưu trữ tệp S3 không qua đĩa trung gian** | ✅ Tải trực tiếp qua RAM Buffer (`multer.memoryStorage`) lên MinIO `unirequest-files` (≤ 20MB), xem trước ảnh trực tiếp |
-| **Kiểm soát lỗi** | **Kiểm tra ràng buộc nghiệp vụ hai lớp (Frontend & API)** | ✅ Ràng buộc minh chứng động theo danh mục, lý do khẩn cấp, bắt buộc lý do từ chối và chặn ghi đè hồ sơ đã xử lý (`409`) |
-| **Điều phối** | **Workflow Engine Kestra (Apache-2.0 · GitOps YAML)** | ✅ Tự động nạp flow `unirequest.dxos/unirequest-lifecycle` qua `kestra-init`, nhận Webhook có xác thực Basic Auth |
-| **Báo cáo & Truy vết** | **Lịch sử xử lý bất biến, Biểu đồ 7 ngày & In phiếu xác nhận** | ✅ Bảng `request_audit_logs`, API `GET /api/requests/analytics` (xu hướng 7 ngày, phân bổ danh mục động, tỷ lệ hoàn tất, thời gian xử lý TB) |
+| **Danh mục động** | **Quản trị Danh mục theo từng Ban (`request_categories` + `/api/categories`)** | ✅ Từng Ban tự tạo/sửa/bật-tắt/xóa hàng loạt danh mục thuộc phạm vi mình; Combobox tự lọc theo phòng ban đang chọn và hỗ trợ *"Yêu cầu khác"* |
+| **Tệp đính kèm** | **Lưu trữ tệp S3 không qua đĩa trung gian** | ✅ Tải trực tiếp qua RAM Buffer (`multer.memoryStorage`) lên MinIO `unirequest-files` (<= 20MB), xem trước ảnh trực tiếp |
+| **Kiểm soát lỗi** | **Kiểm tra ràng buộc nghiệp vụ hai lớp (Frontend & API)** | ✅ Ràng buộc phòng ban hợp lệ, minh chứng động theo danh mục, lý do khẩn cấp, bắt buộc lý do từ chối và chặn ghi đè hồ sơ đã xử lý (`409`) |
+| **Tự động hóa Kestra** | **Bộ 3 Workflow GitOps YAML (`unirequest.dxos`) + Callback SLA** | ✅ `unirequest-lifecycle` (Webhook realtime + DB), `unirequest-sla-watchdog` (15 phút quét quá hạn -> callback `/api/internal/kestra/sla-alert` ghi `SLA_WARNING`), `unirequest-daily-report` (17:30 xuất CSV -> MinIO) |
+| **Báo cáo & Truy vết** | **Lịch sử xử lý bất biến, Biểu đồ 7 ngày & In phiếu xác nhận** | ✅ Bảng `request_audit_logs` (gồm `SLA_WARNING`), API `GET /api/requests/analytics` lọc theo phạm vi phòng ban, tỷ lệ hoàn tất & thời gian xử lý TB |
 | **AI mở rộng** | **Phân loại & Trợ lý AI nội bộ (Ollama / RAG)** | 🗓️ Lộ trình `v1.0.0` - mở rộng qua Kestra AI Plugin mà không đổi kiến trúc lõi |
 
 ---
@@ -110,11 +115,14 @@ At many universities, thousands of student and faculty requests - enrollment cer
 Hệ thống tuân thủ nguyên lý **phân tách 2 tầng Open-Core**:
 
 1. **Tầng 1 - Lõi Headless Open-Core (`docker-compose.yml`, `config/`):** Cung cấp 4 nhóm dịch vụ hạ tầng chạy ngầm:
-   - **Identity / SSO:** `Keycloak 26.0` (tự nạp Realm `unirequest`, cấp JWT RS256).
-   - **API Gateway (Zero-Trust Border):** `Kong 3.7.1 OSS` định tuyến `/auth` → Keycloak (`strip_path=true`) và `/api` → Backend (`strip_path=false`, hỗ trợ cả REST lẫn WebSocket Upgrade `/api/socket.io`), tự động kích hoạt `rate-limiting` (120 req/phút) và `correlation-id` (`X-Correlation-ID`) qua `kong-init`.
-   - **Structured & Unstructured Data:** `PostgreSQL 16` (`requests`, `request_categories`, `request_audit_logs`, `request_comments`, `notifications`, `notification_reads`, `push_subscriptions` và database `kestra`) kết hợp `MinIO S3` (lưu trữ tệp đính kèm).
-   - **Workflow Engine:** `Kestra OSS` (Apache-2.0), tự động nạp luồng YAML GitOps qua `kestra-init`.
-2. **Tầng 2 - Ứng dụng Nghiệp vụ (`apps/demo-app`, `apps/backend-api`):** Toàn bộ giao tiếp REST & Socket.IO đi qua cổng Kong `:8000`; Backend xác minh JWT RS256 từ Public Key của Keycloak, thực thi RBAC, ghi lịch sử xử lý, phát sự kiện realtime/Web Push và kích hoạt luồng Kestra.
+   - **Identity / SSO:** `Keycloak 26.0` (tự nạp Realm `unirequest`, cấp JWT RS256 kèm `roles` & `groups`, đồng thời cấp dữ liệu cây Group động qua Keycloak Admin API).
+   - **API Gateway (Zero-Trust Border):** `Kong 3.7.1 OSS` định tuyến `/auth` -> Keycloak (`strip_path=true`) và `/api` -> Backend (`strip_path=false`, hỗ trợ cả REST lẫn WebSocket Upgrade `/api/socket.io`), tự động kích hoạt `rate-limiting` (120 req/phút) và `correlation-id` (`X-Correlation-ID`) qua `kong-init`.
+   - **Structured & Unstructured Data:** `PostgreSQL 16` (10 script migration idempotent trong `config/postgres/init/`, hỗ trợ `target_department`, `recipient_department`, `hidden_by_sender`/`hidden_by_receiver`, `request_categories`, `request_audit_logs`, `request_comments`, `notifications`, `notification_reads`, `push_subscriptions` và DB `kestra`) kết hợp `MinIO S3` (lưu tệp đính kèm và báo cáo CSV tự động tại `unirequest-files/reports/daily/`).
+   - **Workflow Engine:** `Kestra OSS` (Apache-2.0), nạp biến môi trường nội mạng `ENV_*` và tự động đồng bộ toàn bộ 3 luồng YAML GitOps qua `kestra-init` ([kestra-setup.sh](scripts/kestra-setup.sh)):
+     - [unirequest-lifecycle.yml](config/kestra/flows/unirequest-lifecycle.yml): Webhook realtime nhận payload tạo/cập nhật yêu cầu, phân tuyến động theo `target_department`, phân loại SLA (`URGENT`/`HIGH`/`NORMAL`) và kiểm tra hàng đợi `PENDING` trên PostgreSQL.
+     - [unirequest-sla-watchdog.yml](config/kestra/flows/unirequest-sla-watchdog.yml): Lịch chạy mỗi 15 phút (`*/15 * * * *`, hỗ trợ tham số `testThresholdMinutes` khi chạy tay) quét đơn `PENDING` quá hạn, dùng `Loop` gọi callback `POST /api/internal/kestra/sla-alert` (`x-kestra-key`) để ghi audit `SLA_WARNING` (chống lặp 6 giờ) và đẩy cảnh báo khẩn về Portal.
+     - [unirequest-daily-report.yml](config/kestra/flows/unirequest-daily-report.yml): Lịch chạy `17:30` hằng ngày (`30 17 * * *`, múi giờ `Asia/Ho_Chi_Minh`) chạy song song thống kê theo phòng ban & KPI, chuyển CSV (`IonToCsv`) và upload thẳng lên MinIO.
+2. **Tầng 2 - Ứng dụng Nghiệp vụ (`apps/demo-app`, `apps/backend-api`):** Toàn bộ giao tiếp REST & Socket.IO đi qua cổng Kong `:8000`; Backend xác minh JWT RS256 từ Public Key của Keycloak, phân giải phạm vi phòng ban (`ALL` / `DEPARTMENT` / `PERSONAL`), ghi lịch sử xử lý, phát sự kiện realtime/Web Push theo đúng phòng ban và giao tiếp hai chiều với Kestra.
 
 <details>
 <summary><strong>Xem thêm: Sơ đồ tuần tự (Mermaid Sequence Diagram)</strong></summary>
@@ -131,24 +139,28 @@ sequenceDiagram
     participant PG as PostgreSQL 16 (:5432)
     participant KS as Kestra Engine (:8085)
 
-    SV->>FE: Đăng nhập & chọn danh mục yêu cầu
+    SV->>FE: Đăng nhập & chọn Phòng ban (/api/departments) + Danh mục
     FE->>KONG: /auth (OIDC PKCE S256)
-    KONG->>KC: Xác thực & cấp JWT RS256
-    KC-->>FE: Access Token (realm_access.roles)
+    KONG->>KC: Xác thực & cấp JWT RS256 (roles + groups)
+    KC-->>FE: Access Token (realm_access.roles, groups)
     FE<-->KONG: WS /api/socket.io (JWT RS256)
-    KONG<-->BE: Join room user:<id> & role:staff
+    KONG<-->BE: Join room user:<id> & dept:<group>
 
     FE->>KONG: POST /api/upload (Bearer JWT + tệp)
     KONG->>BE: Forward + X-Correlation-ID + Rate-Limit
     BE->>S3: putObject(RAM Buffer -> unirequest-files)
     S3-->>BE: Public S3 URL
 
-    FE->>KONG: POST /api/requests (title, category, priority, attachment_url)
+    FE->>KONG: POST /api/requests (title, target_department, category, priority, attachment_url)
     KONG->>BE: Forward + JWT Verify + Validation
-    BE->>PG: INSERT requests + audit_logs + notifications
-    BE->>KS: POST Webhook (Basic Auth) -> unirequest-lifecycle
-    KS-->>BE: executionId (phân tuyến phòng ban + SLA)
-    BE-->>FE: 201 Created + Emit Socket.IO & Web Push tới Cán bộ
+    BE->>PG: INSERT requests + audit_logs + notifications (recipient_department)
+    BE->>KS: POST Webhook -> unirequest-lifecycle
+    KS-->>BE: executionId (phân tuyến phòng ban + SLA + query DB)
+    BE-->>FE: 201 Created + Emit Socket.IO & Web Push đúng Ban phụ trách
+
+    KS->>BE: Cron 15p (unirequest-sla-watchdog) -> POST /api/internal/kestra/sla-alert
+    BE->>PG: Ghi SLA_WARNING + Bắn thông báo URGENT đúng Ban
+    KS->>S3: Cron 17:30 (unirequest-daily-report) -> Upload CSV (reports/daily/*.csv)
 ```
 
 </details>
@@ -161,13 +173,13 @@ Toàn bộ ngăn xếp công nghệ sử dụng **100% giấy phép nguồn mở
 
 | Lớp chức năng · *Layer* | Công nghệ · *Technology* | Vai trò · *Role* | Giấy phép OSI · *License* |
 | :--- | :--- | :--- | :--- |
-| **SSO & RBAC** | Keycloak `26.0` | Định danh tập trung OIDC, PKCE S256, cấp JWT RS256 | **Apache-2.0** |
+| **SSO & RBAC** | Keycloak `26.0` | Định danh tập trung OIDC, PKCE S256, cấp JWT RS256 (`roles` + `groups`) & Admin Group Tree API | **Apache-2.0** |
 | **API Gateway** | Kong Gateway `3.7.1` OSS | Định tuyến `/auth`, `/api` & `/api/socket.io`, Rate-Limiting, `X-Correlation-ID` | **Apache-2.0** |
-| **Database** | PostgreSQL `16-alpine` | Dữ liệu `requests`, `request_categories`, `request_audit_logs`, `request_comments`, `notifications`, `push_subscriptions` | **PostgreSQL License** |
-| **Object Storage** | MinIO S3 API | Lưu trữ ảnh & tài liệu đính kèm (`unirequest-files`) | **AGPL-3.0 / Apache-2.0** *(dịch vụ tách biệt)* |
-| **Workflow Engine** | Kestra OSS (`kestra/kestra`) | Điều phối luồng GitOps YAML, phân tuyến phòng ban & SLA | **Apache-2.0** |
-| **Backend & Realtime** | Node.js 20, Express, TypeScript, Socket.IO, `web-push` | JWT Middleware, RBAC, Dynamic Categories, Comments, Notifications, VAPID Push, Analytics | **MIT** |
-| **Frontend & PWA** | React 19, TypeScript, Vite 8, Tailwind v4, Shadcn/UI, `vite-plugin-pwa` | Giao diện Sáng/Tối, Combobox danh mục, Notification Center, Comments, Biểu đồ 7 ngày, Workbox SW | **MIT** |
+| **Database** | PostgreSQL `16-alpine` | Dữ liệu `requests` (`target_department`, `hidden_by_*`), `request_categories`, `request_audit_logs`, `request_comments`, `notifications`, `push_subscriptions` | **PostgreSQL License** |
+| **Object Storage** | MinIO S3 API | Lưu trữ ảnh/tài liệu đính kèm & báo cáo CSV ngày (`unirequest-files`) | **AGPL-3.0 / Apache-2.0** *(dịch vụ tách biệt)* |
+| **Workflow Engine** | Kestra OSS (`kestra/kestra`) | Bộ 3 workflow GitOps YAML: Lifecycle Webhook, SLA Watchdog (15 phút) & Daily CSV Report (17:30) | **Apache-2.0** |
+| **Backend & Realtime** | Node.js 20, Express, TypeScript, Socket.IO, `web-push` | JWT + Group Scope Middleware, `/api/departments`, Kestra Callback, Department Notifications & Analytics | **MIT** |
+| **Frontend & PWA** | React 19, TypeScript, Vite 8, Tailwind v4, Shadcn/UI, `vite-plugin-pwa` | Giao diện Sáng/Tối, viền focus đỏ `3px`, xóa hàng loạt Checkbox, Notification Center, Comments, Workbox SW | **MIT** |
 | **Web Server (SPA/PWA)** | Nginx `alpine` | Phục vụ bundle tĩnh gọn nhẹ, SPA fallback, `no-cache` cho `sw.js` & `manifest.webmanifest`, `/health` | **BSD-2-Clause** |
 | **UniRequest-OS** | Toàn bộ mã nguồn & cấu hình | Nền tảng Cổng dịch vụ Yêu cầu Đại học | **Apache-2.0** ([LICENSE](LICENSE)) |
 
@@ -178,17 +190,17 @@ Toàn bộ ngăn xếp công nghệ sử dụng **100% giấy phép nguồn mở
 ![Luồng nghiệp vụ động 5 bước của UniRequest-OS](docs/images/workflow-animated.svg)
 
 ### 1. Luồng Sinh viên gửi yêu cầu & nhận phản hồi realtime
-1. **Đăng nhập & Soạn yêu cầu:** Sinh viên đăng nhập tài khoản trường, tìm và chọn loại yêu cầu từ danh mục động (hoặc nhập loại cụ thể khi chọn *"Yêu cầu khác"*), chọn mức ưu tiên và đính kèm tệp nếu cần.
-2. **Kiểm tra đầu vào:** Hệ thống kiểm tra tự động theo quy tắc của danh mục đã chọn (ví dụ danh mục yêu cầu ảnh/mô tả hiện trường hoặc yêu cầu khẩn cấp cần nêu rõ lý do).
-3. **Lưu trữ, Điều phối & Thông báo tức thì:** Lưu bản ghi `PENDING` vào PostgreSQL, kích hoạt luồng [unirequest-lifecycle.yml](config/kestra/flows/unirequest-lifecycle.yml) trên Kestra và phát thông báo realtime (Socket.IO + Web Push) tới đội ngũ Cán bộ/Giảng viên.
+1. **Đăng nhập & Chọn Phòng ban tiếp nhận:** Sinh viên đăng nhập tài khoản trường, chọn **Phòng ban / Nhóm tiếp nhận** (`target_department` nạp động từ Keycloak Groups qua `/api/departments`), tìm loại yêu cầu thuộc ban đó từ danh mục động (hoặc nhập tên cụ thể khi chọn *"Yêu cầu khác"*), chọn mức ưu tiên và đính kèm tệp nếu cần.
+2. **Kiểm tra đầu vào:** Hệ thống kiểm tra tự động phòng ban hợp lệ, minh chứng theo cấu hình danh mục hoặc lý do khẩn cấp.
+3. **Lưu trữ, Điều phối & Thông báo tách theo Ban:** Lưu bản ghi `PENDING` vào PostgreSQL, kích hoạt Webhook [unirequest-lifecycle.yml](config/kestra/flows/unirequest-lifecycle.yml) trên Kestra và phát thông báo realtime (Socket.IO + Web Push) **chỉ tới đúng Ban phụ trách**. Sinh viên có thể xóa đơn khỏi *Lịch sử* cá nhân mà không ảnh hưởng tới hàng đợi của Phòng ban.
 
-### 2. Luồng Cán bộ / Giảng viên trao đổi, phê duyệt & quản trị danh mục
-1. **Trao đổi & Phê duyệt:** Cán bộ nhận thông báo ngay trên chuông góc phải, mở thẳng chi tiết yêu cầu để nhắn tin trao đổi 2 chiều trong mục **Trao đổi**, sau đó bấm **Duyệt** hoặc **Từ chối** (bắt buộc nhập lý do khi từ chối).
-2. **Quản lý thông báo thông minh:** Khi mở xem yêu cầu từ bảng, Toast hoặc Chuông, toàn bộ thông báo của yêu cầu đó tự động đánh dấu đã đọc và đồng bộ đa tab; người dùng cũng có thể chuyển thủ công **Đã đọc / Chưa đọc** hoặc **Ẩn (`×`)** từng thông báo riêng biệt.
-3. **Quản trị danh mục động:** Tại mục **Danh mục**, Cán bộ thêm loại yêu cầu mới, gán phòng ban phụ trách, đặt thời hạn xử lý (SLA), lọc theo *Tất cả / Đang bật / Đang ẩn* hoặc bật/tắt hiển thị danh mục ngay lập tức.
-4. **Thống kê & In phiếu xác nhận:** Biểu đồ xu hướng 7 ngày và phân bổ theo danh mục tự động cập nhật; sinh viên và cán bộ đều có thể **In phiếu xác nhận** kèm lịch sử xử lý.
+### 2. Luồng Cán bộ / Giảng viên xử lý theo Ban, SLA Watchdog & Báo cáo tự động
+1. **Tiếp nhận, Trao đổi & Phê duyệt đúng phạm vi:** Cán bộ thuộc Group nào chỉ thấy đơn, thông báo và thống kê của Group đó (và Group con bên trong); trao đổi 2 chiều trong mục **Trao đổi**, sau đó bấm **Duyệt** hoặc **Từ chối** (bắt buộc nhập lý do) hoặc tick Checkbox để xóa các đơn đã xử lý khỏi hàng đợi mà không làm mất lịch sử của Sinh viên.
+2. **Giám sát SLA & Báo cáo cuối ngày tự động (Kestra):** Mỗi 15 phút, [unirequest-sla-watchdog.yml](config/kestra/flows/unirequest-sla-watchdog.yml) quét đơn `PENDING` quá hạn (2h/8h/24h hoặc theo `testThresholdMinutes` khi test) và gọi callback `POST /api/internal/kestra/sla-alert` để ghi `SLA_WARNING` và bắn thông báo đỏ về chuông Ban phụ trách. Lúc `17:30` mỗi ngày, [unirequest-daily-report.yml](config/kestra/flows/unirequest-daily-report.yml) tự xuất CSV lên MinIO `unirequest-files/reports/daily/`.
+3. **Quản trị danh mục riêng theo từng Ban:** Tại mục **Danh mục**, mỗi Ban tự tạo, chỉnh sửa, bật/tắt hoặc chọn nhiều Checkbox để xóa các loại yêu cầu thuộc ban mình, đặt thời hạn xử lý (SLA) và yêu cầu minh chứng.
+4. **Thống kê & In phiếu xác nhận:** Biểu đồ xu hướng 7 ngày và phân bổ theo danh mục tự động cập nhật theo đúng phạm vi quyền; sinh viên và cán bộ đều có thể **In phiếu xác nhận** kèm lịch sử xử lý (bao gồm dấu mốc `SLA_WARNING`).
 
-*English summary:* Students sign in via Keycloak PKCE SSO, pick any active category from the searchable combobox (or enter a custom label), upload attachments via RAM buffer to MinIO, and trigger Kestra YAML routing plus realtime staff notifications. Staff discuss inline via realtime comments, approve/reject with mandatory rejection reasons, customize categories live via `/api/categories`, monitor 7-day trend analytics, and issue printable receipts.
+*English summary:* Students sign in via Keycloak PKCE SSO, select a live Keycloak-synced target department (`GET /api/departments`), pick a department-scoped category (or enter a custom label), upload attachments to MinIO, and trigger Kestra webhook routing plus department-targeted realtime/Web Push notifications. Staff only see requests, analytics, and notifications within their Keycloak group/subgroups, manage department-specific categories with bulk checkbox delete, hide processed rows independently (`hidden_by_sender` / `hidden_by_receiver`), receive automated 15-minute `SLA_WARNING` alerts from Kestra Watchdog, and archive daily 17:30 CSV summaries in MinIO.
 
 ---
 
@@ -200,6 +212,7 @@ Toàn bộ ngăn xếp công nghệ sử dụng **100% giấy phép nguồn mở
 - ✅ **v0.4.0 - Quy trình nghiệp vụ, Lịch sử xử lý & DevOps:** `request_audit_logs`, API `/analytics` & `/:id`, `Makefile`, Windows WSL2 Launcher và GitHub Actions CI.
 - ✅ **v0.5.0 - Thiết kế tối giản, Logo 3D nền trong suốt & Danh mục động:** Tách nền Logo 3D (`logo-3d.png`), phân vai ngữ cảnh cổng (*Sinh viên / Giảng viên / Cán bộ / Quản trị*), bảng `request_categories` + `/api/categories` CRUD + Combobox tìm kiếm, tách biệt Dashboard Sinh viên và Cán bộ với biểu đồ 7 ngày.
 - ✅ **v0.6.0 - Realtime Socket.IO, Thông báo đa kênh, Bình luận & PWA:** Tích hợp Socket.IO xác thực JWT qua Kong (`/api/socket.io`), Trung tâm Thông báo (đọc/chưa đọc/ẩn theo từng tài khoản, tự đọc khi mở yêu cầu, đồng bộ đa tab), Bình luận trực tiếp (`request_comments`), PWA cài đặt được (`vite-plugin-pwa` + Workbox) và Web Push VAPID.
+- ✅ **v0.7.0 - Định tuyến Phòng ban theo Keycloak Groups, Xóa độc lập 2 phía & Kestra 3-Flow Automation Pack:** Đồng bộ cây Group động từ Keycloak (`/api/departments`), phân quyền 3 phạm vi (`ALL`/`DEPARTMENT`/`PERSONAL`), danh mục và thông báo tách riêng theo Ban kèm xóa hàng loạt bằng Checkbox, cơ chế soft-delete hai phía (`hidden_by_sender`/`hidden_by_receiver`) + tự dọn DB, viền focus đỏ `3px` trên ô nhập liệu, và nâng cấp Kestra lên 3 workflows (`unirequest-lifecycle`, `unirequest-sla-watchdog`, `unirequest-daily-report`) kèm callback `/api/internal/kestra/sla-alert`.
 - 🗓️ **v1.0.0 - Mở rộng AI & Triển khai Production:**
   - Tích hợp gợi ý phân loại yêu cầu tự động bằng AI nội bộ (Ollama / RAG qua Kestra AI Plugin).
   - Hỗ trợ triển khai HTTPS chuẩn sản xuất với Reverse Proxy / Let's Encrypt.
@@ -244,11 +257,11 @@ make test
 | **Backend Health Check** | http://localhost:8000/api/health | Báo trạng thái `database`, `minio`, `workflow` |
 
 ### Tài khoản mẫu (tự động nạp từ `config/keycloak/realm-export.json`)
-| Tài khoản | Mật khẩu | Vai trò (`realm_access.roles`) | Quyền hạn |
+| Tài khoản | Mật khẩu | Vai trò & Nhóm mặc định | Quyền hạn |
 | :--- | :---: | :--- | :--- |
-| `sinhvien` | `Admin@123` | `sinhvien` | Tạo yêu cầu, đính kèm tệp, trao đổi trực tiếp, nhận thông báo & in phiếu cá nhân |
-| `canbo` | `123456` | `canbo` | Xem, trao đổi & phê duyệt yêu cầu toàn trường, quản lý danh mục, xem thống kê |
-| `giangvien` | `123456` | `giangvien` | Xem, trao đổi & phê duyệt yêu cầu học vụ, quản lý danh mục |
+| `sinhvien` | `Admin@123` | `sinhvien` · `/Lớp/K11A1` | Tạo yêu cầu, chọn phòng ban tiếp nhận, đính kèm tệp, trao đổi, nhận thông báo & in phiếu cá nhân |
+| `canbo` | `123456` | `canbo` · `/CTSV` | Xem, trao đổi & phê duyệt yêu cầu thuộc Ban `CTSV`, quản lý danh mục `CTSV`, xem thống kê |
+| `giangvien` | `123456` | `giangvien` · `/KETOAN` | Xem, trao đổi & phê duyệt yêu cầu thuộc Ban `KETOAN`, quản lý danh mục `KETOAN` |
 
 > **Quản trị hệ thống (`admin`):** Để đảm bảo bảo mật, hệ thống **không nạp sẵn tài khoản `admin` mật khẩu mặc định** trong realm ứng dụng. Việc quản trị người dùng, cấp/thu hồi vai trò `admin` và cấu hình SSO được thực hiện duy nhất qua **Keycloak Admin Console** (`http://localhost:8080`) bằng tài khoản `KC_ADMIN_USER` / `KC_ADMIN_PASSWORD` đặt trong `.env`.
 
@@ -259,6 +272,7 @@ curl -s http://localhost:8000/api/health
 
 # 2. Kiểm tra Zero-Trust JWT Guard (thiếu token phải trả về HTTP 401)
 curl -s -o /dev/null -w "requests: HTTP %{http_code}\n" http://localhost:8000/api/requests
+curl -s -o /dev/null -w "departments: HTTP %{http_code}\n" http://localhost:8000/api/departments
 curl -s -o /dev/null -w "categories: HTTP %{http_code}\n" http://localhost:8000/api/categories
 curl -s -o /dev/null -w "notifications: HTTP %{http_code}\n" http://localhost:8000/api/notifications
 
@@ -266,6 +280,11 @@ curl -s -o /dev/null -w "notifications: HTTP %{http_code}\n" http://localhost:80
 curl -s http://localhost:3000/manifest.webmanifest
 curl -s -o /dev/null -w "sw.js: HTTP %{http_code}\n" http://localhost:3000/sw.js
 curl -s "http://localhost:8000/api/socket.io/?EIO=4&transport=polling"
+
+# 4. Kiểm tra và thử nhanh Bộ 3 Kestra Workflows (:8085)
+# - Truy cập http://localhost:8085 -> Flows -> namespace unirequest.dxos
+# - Chạy thử unirequest-sla-watchdog với input testThresholdMinutes = 1 để test cảnh báo SLA_WARNING
+# - Chạy thử unirequest-daily-report rồi mở MinIO Console (http://localhost:9001 -> unirequest-files/reports/daily/)
 ```
 
 ---
@@ -282,7 +301,7 @@ make test
 ```
 
 - Open the **UniRequest Portal (PWA)**: http://localhost:3000 (sign in with `sinhvien` / `Admin@123`, `giangvien` / `123456`, or `canbo` / `123456`; system administration uses the Keycloak Admin Console at http://localhost:8080 with `KC_ADMIN_*` from `.env`).
-- Open the **Kestra Workflow UI**: http://localhost:8085 (`admin@unirequest.edu.vn` / `KestraAdmin2026!`) to inspect live GitOps YAML executions under namespace `unirequest.dxos`.
+- Open the **Kestra Workflow UI**: http://localhost:8085 (`admin@unirequest.edu.vn` / `KestraAdmin2026!`) to inspect and run the 3 GitOps YAML workflows under namespace `unirequest.dxos` (`unirequest-lifecycle`, `unirequest-sla-watchdog`, `unirequest-daily-report`).
 - Verify all core services via Kong: `curl -s http://localhost:8000/api/health`.
 
 ---
@@ -317,6 +336,10 @@ Mã nguồn **UniRequest-OS** được phát hành theo giấy phép **[Apache L
 
 Quản lý phiên bản theo [SemVer](https://semver.org/):
 
+- **`v0.7.0` (21/11/2026):**
+  - **Định tuyến & Phân quyền theo Keycloak Groups:** Thêm `target_department` (`08-department-routing.sql`), API `GET /api/departments` đồng bộ đệ quy toàn bộ Group & Group con từ Keycloak Admin API, lọc quyền 3 tầng (`ALL` / `DEPARTMENT` / `PERSONAL`), và hỗ trợ thông báo + Web Push tách riêng theo từng Ban (`09-department-notifications.sql`).
+  - **Danh mục theo Phòng ban & Xóa độc lập 2 phía:** Mỗi Ban quản trị độc lập danh mục yêu cầu của mình kèm xóa hàng loạt bằng Checkbox (`DELETE /api/categories`); bổ sung soft-delete hai phía (`10-independent-request-hide.sql`: `hidden_by_sender`, `hidden_by_receiver`) để xóa bên người gửi không làm mất bên người nhận (và ngược lại) cho tới khi cả 2 cùng xóa; tối giản mô tả UI và đổi viền focus ô nhập liệu sang màu đỏ `3px`.
+  - **Bộ Kestra Automation Pack (3 Workflows hoàn chỉnh):** Nâng cấp `docker-compose.yml` (`ENV_*` env vars) & `scripts/kestra-setup.sh` (đồng bộ tất cả `*.yml` trong `config/kestra/flows/`), nâng cấp `unirequest-lifecycle` (phân tuyến động & truy vấn hàng đợi PostgreSQL), bổ sung `unirequest-sla-watchdog` (cron 15 phút + `testThresholdMinutes` gọi `POST /api/internal/kestra/sla-alert` ghi audit `SLA_WARNING` & đẩy cảnh báo khẩn), và `unirequest-daily-report` (cron `17:30` xuất báo cáo CSV tổng hợp lưu lên MinIO `unirequest-files/reports/daily/`).
 - **`v0.6.0` (18/11/2026):** Tích hợp **PWA cài đặt được** (`vite-plugin-pwa` + Workbox App Shell + bộ icon từ Logo 3D + Offline Banner an toàn), **Bình luận trực tiếp trong yêu cầu** (`request_comments`), **Realtime Socket.IO** xác thực Keycloak JWT RS256 qua Kong Gateway (`/api/socket.io`), **Trung tâm Thông báo In-App** (đọc/chưa đọc/ẩn riêng từng người dùng qua `notification_reads`, tự động đánh dấu đã đọc khi mở yêu cầu, đồng bộ đa tab), **Web Push Notification** bằng VAPID (`push_subscriptions`), hỗ trợ `PATCH` CORS đầy đủ và bộ lọc *Tất cả / Đang bật / Đang ẩn* cho quản trị Danh mục.
 - **`v0.5.0` (18/11/2026):** Thiết kế lại giao diện tối giản chuẩn triển khai thực tế - tích hợp Logo 3D nền trong suốt (`logo-3d.png`), tiêu đề & điều hướng tự thích ứng theo đúng vai trò (`Sinh viên`, `Giảng viên`, `Cán bộ`, `Quản trị viên`), hệ thống **Danh mục yêu cầu động** (`request_categories` + `/api/categories` CRUD + Combobox tìm kiếm + tùy chọn loại yêu cầu tự nhập), tách biệt Dashboard Sinh viên và Cán bộ với biểu đồ xu hướng 7 ngày & phân bổ theo danh mục, loại bỏ toàn bộ thuật ngữ kỹ thuật nội bộ khỏi giao diện người dùng cuối.
 - **`v0.4.0` (18/11/2026):** Bổ sung bảng bất biến `request_audit_logs`, API `/api/requests/:id` & `/api/requests/analytics`, giao diện lịch sử xử lý, in phiếu xác nhận, `Makefile`, Windows Launcher và GitHub Actions CI.

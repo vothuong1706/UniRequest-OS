@@ -7,6 +7,7 @@ export interface RequestWorkflowEventPayload {
   request_id: string;
   title: string;
   category?: string;
+  target_department?: string | null;
   status: string;
   priority?: string;
   created_by: string;

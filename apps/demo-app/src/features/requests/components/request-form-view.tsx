@@ -4,6 +4,7 @@ import {
   Check,
   ChevronsUpDown,
   Loader2,
+  RefreshCw,
   RotateCcw,
   Search,
   Send,
@@ -17,12 +18,20 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { requestsApi, uploadApi } from '@/services/api-client';
-import type { RequestCategoryItem, RequestPriority } from '../types';
+import type {
+  DepartmentGroupItem,
+  RequestCategoryItem,
+  RequestPriority,
+  TargetDepartment,
+} from '../types';
 import { PRIORITY_LEVELS } from '../utils/priority';
 import { FileDropzone } from './file-dropzone';
 
 interface RequestFormViewProps {
   categories: RequestCategoryItem[];
+  departments: DepartmentGroupItem[];
+  loadingDepartments: boolean;
+  onRefreshDepartments: () => Promise<void>;
   isStaff: boolean;
   onCreated: () => Promise<void>;
 }
@@ -42,34 +51,49 @@ const FALLBACK_CATEGORIES: RequestCategoryItem[] = [
 
 export function RequestFormView({
   categories,
+  departments,
+  loadingDepartments,
+  onRefreshDepartments,
   isStaff,
   onCreated,
 }: RequestFormViewProps) {
-  const activeCategories = useMemo(() => {
-    const active = categories.filter((c) => c.is_active);
-    return active.length > 0 ? active : FALLBACK_CATEGORIES;
-  }, [categories]);
-
-  const defaultCategoryCode = activeCategories[0].code;
-
   const [categoryCode, setCategoryCode] = useState<string>('');
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
   const [customCategoryLabel, setCustomCategoryLabel] = useState('');
+  const [targetDepartment, setTargetDepartment] = useState<TargetDepartment | ''>('');
 
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<RequestPriority>('NORMAL');
   const [description, setDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [departmentError, setDepartmentError] = useState('');
   const [titleError, setTitleError] = useState('');
   const [descError, setDescError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
 
   const comboboxRef = useRef<HTMLDivElement>(null);
+  const departmentRef = useRef<HTMLSelectElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const descRef = useRef<HTMLTextAreaElement>(null);
 
+  const activeCategories = useMemo(() => {
+    const active = categories.filter((c) => c.is_active);
+    if (!targetDepartment) {
+      return active.length > 0 ? active : FALLBACK_CATEGORIES;
+    }
+    const matchingDept = active.filter(
+      (c) =>
+        c.department === targetDepartment ||
+        targetDepartment.startsWith(`${c.department}/`)
+    );
+    return matchingDept.length > 0
+      ? [...matchingDept, ...FALLBACK_CATEGORIES]
+      : FALLBACK_CATEGORIES;
+  }, [categories, targetDepartment]);
+
+  const defaultCategoryCode = activeCategories[0].code;
   const effectiveCategoryCode = categoryCode || defaultCategoryCode;
 
   const selectedCategory = useMemo(
@@ -109,10 +133,12 @@ export function RequestFormView({
     setCategoryCode('');
     setCategorySearch('');
     setCustomCategoryLabel('');
+    setTargetDepartment('');
     setTitle('');
     setPriority('NORMAL');
     setDescription('');
     setSelectedFile(null);
+    setDepartmentError('');
     setTitleError('');
     setDescError('');
     setStatusMessage('');
@@ -120,6 +146,13 @@ export function RequestFormView({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+
+    if (!targetDepartment) {
+      setDepartmentError('Vui lòng chọn phòng ban tiếp nhận yêu cầu.');
+      departmentRef.current?.focus();
+      return;
+    }
+    setDepartmentError('');
 
     if (trimmedTitle.length < 5) {
       setTitleError('Vui lòng nhập tiêu đề tối thiểu 5 ký tự.');
@@ -166,6 +199,7 @@ export function RequestFormView({
         custom_category_label: isOtherCategory
           ? customCategoryLabel.trim() || undefined
           : undefined,
+        target_department: targetDepartment,
         priority,
         attachment_url: attachmentUrl,
       });
@@ -185,26 +219,74 @@ export function RequestFormView({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Tạo yêu cầu mới</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Chọn loại yêu cầu phù hợp để gửi thẳng tới phòng ban phụ trách.
-        </p>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">Tạo yêu cầu mới</h1>
 
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            {/* Phòng ban / Nhóm tiếp nhận (Đồng bộ động từ Keycloak Groups) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="target-department">
+                  Phòng ban / Nhóm tiếp nhận <span className="text-destructive">*</span>
+                </Label>
+                <button
+                  type="button"
+                  disabled={submitting || loadingDepartments}
+                  onClick={() => void onRefreshDepartments()}
+                  className="text-muted-foreground hover:text-foreground inline-flex cursor-pointer items-center gap-1 text-xs transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={cn('size-3', loadingDepartments && 'animate-spin')}
+                  />
+                  <span>Đồng bộ từ Keycloak</span>
+                </button>
+              </div>
+              <select
+                ref={departmentRef}
+                id="target-department"
+                name="target_department"
+                value={targetDepartment}
+                disabled={submitting}
+                aria-invalid={Boolean(departmentError)}
+                onChange={(e) => {
+                  setTargetDepartment(e.target.value as TargetDepartment);
+                  setCategoryCode('');
+                  setCategorySearch('');
+                  if (departmentError) setDepartmentError('');
+                }}
+                className={cn(
+                  'border-input bg-background text-foreground focus:border-red-500 focus:ring-red-500/35 focus:ring-[3px] focus-visible:border-red-500 focus-visible:ring-red-500/35 focus-visible:ring-[3px] flex h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                  !targetDepartment && 'text-muted-foreground',
+                  departmentError &&
+                    'border-destructive focus-visible:ring-destructive/20'
+                )}
+              >
+                <option value="" disabled>
+                  {loadingDepartments
+                    ? 'Đang tải...'
+                    : departments.length === 0
+                      ? 'Chưa có Group nào trong Keycloak'
+                      : '-- Chọn phòng ban / nhóm tiếp nhận --'}
+                </option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.path}>
+                    {dept.depth > 0
+                      ? `${'\u00A0\u00A0'.repeat(dept.depth)}└ ${dept.display_label}`
+                      : dept.name}
+                  </option>
+                ))}
+              </select>
+              {departmentError && (
+                <p className="text-destructive text-xs">{departmentError}</p>
+              )}
+            </div>
+
             {/* Searchable Dynamic Category Combobox */}
             <div className="space-y-2" ref={comboboxRef}>
-              <div className="flex items-center justify-between gap-2">
-                <Label>
-                  Loại yêu cầu <span className="text-destructive">*</span>
-                </Label>
-                <span className="text-muted-foreground text-xs">
-                  {selectedCategory.department} · Dự kiến {selectedCategory.sla_hours}h
-                </span>
-              </div>
+              <Label>
+                Loại yêu cầu <span className="text-destructive">*</span>
+              </Label>
 
               <div className="relative">
                 <button
@@ -213,8 +295,8 @@ export function RequestFormView({
                   onClick={() => setComboboxOpen((prev) => !prev)}
                   aria-expanded={comboboxOpen}
                   className={cn(
-                    'border-input bg-background hover:bg-accent/50 flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors cursor-pointer',
-                    comboboxOpen && 'ring-ring/40 border-ring ring-2'
+                    'border-input bg-background hover:bg-accent/50 flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors outline-none cursor-pointer focus:border-red-500 focus:ring-red-500/35 focus:ring-[3px] focus-visible:border-red-500 focus-visible:ring-red-500/35 focus-visible:ring-[3px]',
+                    comboboxOpen && 'border-red-500 ring-red-500/35 ring-[3px]'
                   )}
                 >
                   <span className="truncate font-medium">{selectedCategory.name}</span>
@@ -230,7 +312,7 @@ export function RequestFormView({
                         autoFocus
                         value={categorySearch}
                         onChange={(e) => setCategorySearch(e.target.value)}
-                        placeholder="Tìm loại yêu cầu hoặc phòng ban..."
+                        placeholder="Tìm loại yêu cầu..."
                         className="placeholder:text-muted-foreground w-full bg-transparent text-sm outline-none"
                       />
                     </div>
@@ -238,7 +320,7 @@ export function RequestFormView({
                     <div className="max-h-64 overflow-y-auto p-1">
                       {filteredCategories.length === 0 ? (
                         <p className="text-muted-foreground px-3 py-6 text-center text-xs">
-                          Không tìm thấy danh mục phù hợp.
+                          Không có danh mục phù hợp.
                         </p>
                       ) : (
                         filteredCategories.map((item) => {
@@ -267,9 +349,6 @@ export function RequestFormView({
                                 />
                                 <span className="truncate font-medium">{item.name}</span>
                               </div>
-                              <span className="text-muted-foreground shrink-0 text-xs">
-                                {item.department}
-                              </span>
                             </button>
                           );
                         })
@@ -292,7 +371,7 @@ export function RequestFormView({
                   disabled={submitting}
                   value={customCategoryLabel}
                   onChange={(e) => setCustomCategoryLabel(e.target.value)}
-                  placeholder="VD: Xin xác nhận thực tập, Đề xuất tổ chức câu lạc bộ..."
+                  placeholder="VD: Xin xác nhận thực tập..."
                 />
               </div>
             )}

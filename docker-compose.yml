@@ -4,6 +4,8 @@ services:
     container_name: unirequest-postgres
     restart: unless-stopped
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+      PGTZ: ${TZ:-Asia/Ho_Chi_Minh}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -24,6 +26,7 @@ services:
     restart: unless-stopped
     command: start-dev --import-realm
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       KC_DB_USERNAME: ${POSTGRES_USER}
@@ -62,6 +65,7 @@ services:
     container_name: unirequest-kong-migration
     command: kong migrations bootstrap
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-db
       KONG_PG_DATABASE: ${KONG_PG_DB}
@@ -77,6 +81,7 @@ services:
     container_name: unirequest-kong
     restart: unless-stopped
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
       KONG_DATABASE: postgres
       KONG_PG_HOST: kong-db
       KONG_PG_DATABASE: ${KONG_PG_DB}
@@ -114,6 +119,7 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
@@ -129,6 +135,16 @@ services:
     user: "root"
     command: server standalone
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+      JAVA_OPTS: "-Duser.timezone=${TZ:-Asia/Ho_Chi_Minh}"
+      ENV_DB_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB}"
+      ENV_DB_USER: "${POSTGRES_USER}"
+      ENV_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      ENV_MINIO_ENDPOINT: "http://minio:9000"
+      ENV_MINIO_ACCESS_KEY: "${MINIO_ROOT_USER}"
+      ENV_MINIO_SECRET_KEY: "${MINIO_ROOT_PASSWORD}"
+      ENV_BACKEND_URL: "http://backend:4000"
+      ENV_WEBHOOK_KEY: "${KESTRA_WEBHOOK_KEY:-unirequest-dxos-webhook-2026}"
       KESTRA_CONFIGURATION: |
         datasources:
           postgres:
@@ -190,6 +206,7 @@ services:
     container_name: unirequest-backend
     restart: unless-stopped
     environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
       PORT: 4000
       NODE_ENV: production
       DB_HOST: postgres
@@ -198,6 +215,10 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
       KEYCLOAK_REALM_URL: http://keycloak:8080/realms/unirequest
+      KEYCLOAK_ADMIN_URL: http://keycloak:8080
+      KEYCLOAK_REALM: unirequest
+      KC_ADMIN_USER: ${KC_ADMIN_USER:-admin}
+      KC_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin_dev_2026}
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: "false"
@@ -238,6 +259,8 @@ services:
         VITE_KEYCLOAK_CLIENT_ID: unirequest-portal
     container_name: unirequest-frontend
     restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
     ports:
       - "3000:80"
     depends_on:

@@ -1,13 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
-import { emitRequestUpdated } from '../realtime/socket-server.js';
+import {
+  emitRequestUpdated,
+  emitToStaff,
+  emitToUser,
+} from '../realtime/socket-server.js';
 import { categoryService } from '../services/category-service.js';
+import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { notificationService } from '../services/notification-service.js';
-import { hasElevatedRole, requestService } from '../services/request-service.js';
+import {
+  canReviewRequest,
+  canViewRequest,
+  requestService,
+} from '../services/request-service.js';
 import {
   extractPriorityFromDescription,
   workflowService,
 } from '../services/workflow-service.js';
-import { RequestPriority, RequestStatus } from '../types/request.js';
+import {
+  RequestDeleteMode,
+  RequestPriority,
+  RequestStatus,
+} from '../types/request.js';
 
 const VALID_PRIORITIES: readonly RequestPriority[] = [
   'NORMAL',
@@ -46,6 +59,7 @@ export class RequestController {
         description,
         category: rawCategory,
         custom_category_label,
+        target_department: rawTargetDepartment,
         priority: rawPriority,
         attachment_url,
       } = req.body as {
@@ -53,6 +67,7 @@ export class RequestController {
         description?: string;
         category?: string;
         custom_category_label?: string;
+        target_department?: string;
         priority?: string;
         attachment_url?: string;
       };
@@ -113,12 +128,38 @@ export class RequestController {
           ? custom_category_label.trim().slice(0, 120)
           : undefined;
 
+      const trimmedDepartment =
+        typeof rawTargetDepartment === 'string'
+          ? rawTargetDepartment.trim().replace(/^\/+/, '')
+          : '';
+      if (!trimmedDepartment || trimmedDepartment.length > 150) {
+        res.status(400).json({
+          success: false,
+          code: 'INVALID_TARGET_DEPARTMENT',
+          message: 'Vui lòng chọn phòng ban hoặc nhóm tiếp nhận hợp lệ.',
+        });
+        return;
+      }
+
+      const resolvedDepartment =
+        await keycloakGroupService.resolveTargetDepartmentPath(trimmedDepartment);
+      if (!resolvedDepartment.valid) {
+        res.status(400).json({
+          success: false,
+          code: 'INVALID_TARGET_DEPARTMENT',
+          message:
+            'Phòng ban hoặc nhóm tiếp nhận không tồn tại trong hệ thống Keycloak.',
+        });
+        return;
+      }
+
       const newRequest = await requestService.createRequest(
         {
           title: trimmedTitle,
           description: cleanDesc || undefined,
           category: categoryCode,
           custom_category_label: cleanCustomLabel,
+          target_department: resolvedDepartment.canonicalPath,
           priority,
           attachment_url,
         },
@@ -132,6 +173,7 @@ export class RequestController {
         request_id: newRequest.id,
         title: newRequest.title,
         category: newRequest.category,
+        target_department: newRequest.target_department,
         priority: newRequest.priority,
         status: newRequest.status,
         created_by: newRequest.created_by,
@@ -150,19 +192,28 @@ export class RequestController {
         newRequest.workflow_execution_id = workflow.executionId;
       }
 
-      // Gửi thông báo realtime & Web Push tới đội ngũ xử lý (Cán bộ / Giảng viên / Admin)
-      emitRequestUpdated(newRequest.id, newRequest.created_by, 'CREATED');
+      // Gửi thông báo realtime & Web Push đúng tới ban tiếp nhận
+      const deptLabel = newRequest.target_department
+        ? newRequest.target_department.split('/').join(' / ')
+        : 'Chung';
+      emitRequestUpdated(
+        newRequest.id,
+        newRequest.created_by,
+        'CREATED',
+        newRequest.target_department
+      );
       void notificationService
         .createAndDispatch({
           recipientRole: 'staff',
+          recipientDepartment: newRequest.target_department,
           requestId: newRequest.id,
           type: 'REQUEST_CREATED',
           severity: newRequest.priority === 'URGENT' ? 'URGENT' : 'INFO',
           title:
             newRequest.priority === 'URGENT'
-              ? `Yêu cầu khẩn cấp: ${newRequest.title}`
-              : `Yêu cầu mới: ${newRequest.title}`,
-          message: `${user.preferred_username} vừa gửi yêu cầu thuộc nhóm "${cleanCustomLabel || matchedCategory?.name || newRequest.category}".`,
+              ? `[${deptLabel}] Yêu cầu khẩn cấp: ${newRequest.title}`
+              : `[${deptLabel}] Yêu cầu mới: ${newRequest.title}`,
+          message: `${user.preferred_username} vừa gửi yêu cầu tới "${deptLabel}" (${cleanCustomLabel || matchedCategory?.name || newRequest.category}).`,
           actor: user.preferred_username,
         })
         .catch(() => {});
@@ -190,10 +241,13 @@ export class RequestController {
         return;
       }
 
-      const requests = await requestService.getRequests(
-        user.preferred_username,
-        user.roles
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
       );
+      const requests = await requestService.getRequests({
+        ...user,
+        groups: resolvedGroups,
+      });
 
       res.status(200).json({
         success: true,
@@ -217,10 +271,13 @@ export class RequestController {
         return;
       }
 
-      const analytics = await requestService.getAnalytics(
-        user.preferred_username,
-        user.roles
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
       );
+      const analytics = await requestService.getAnalytics({
+        ...user,
+        groups: resolvedGroups,
+      });
 
       res.status(200).json({
         success: true,
@@ -261,11 +318,13 @@ export class RequestController {
         return;
       }
 
-      const elevated = hasElevatedRole(user.roles);
-      if (!elevated && existing.created_by !== user.preferred_username) {
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      if (!canViewRequest({ ...user, groups: resolvedGroups }, existing)) {
         res.status(403).json({
           success: false,
-          message: 'Bạn không có quyền xem yêu cầu này.',
+          message: 'Bạn không có quyền xem yêu cầu của phòng ban khác.',
         });
         return;
       }
@@ -327,6 +386,17 @@ export class RequestController {
         return;
       }
 
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      if (!canReviewRequest({ ...user, groups: resolvedGroups }, existingRequest)) {
+        res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền phê duyệt yêu cầu thuộc phòng ban khác.',
+        });
+        return;
+      }
+
       const isAdmin = user.roles.includes('admin');
       if (existingRequest.status !== 'PENDING' && !isAdmin) {
         res.status(409).json({
@@ -363,6 +433,7 @@ export class RequestController {
             request_id: updatedRequest.id,
             title: updatedRequest.title,
             category: updatedRequest.category,
+            target_department: updatedRequest.target_department,
             priority: updatedRequest.priority,
             status: updatedRequest.status,
             created_by: updatedRequest.created_by,
@@ -387,23 +458,28 @@ export class RequestController {
         emitRequestUpdated(
           updatedRequest.id,
           updatedRequest.created_by,
-          'STATUS_CHANGED'
+          'STATUS_CHANGED',
+          updatedRequest.target_department
         );
 
         if (status === 'APPROVED' || status === 'REJECTED') {
           const isApproved = status === 'APPROVED';
+          const deptLabel = updatedRequest.target_department
+            ? updatedRequest.target_department.split('/').join(' / ')
+            : 'Chung';
           void notificationService
             .createAndDispatch({
               recipientUsername: updatedRequest.created_by,
+              recipientDepartment: updatedRequest.target_department,
               requestId: updatedRequest.id,
               type: isApproved ? 'REQUEST_APPROVED' : 'REQUEST_REJECTED',
               severity: isApproved ? 'SUCCESS' : 'WARNING',
               title: isApproved
-                ? `Yêu cầu đã được phê duyệt`
-                : `Yêu cầu bị từ chối`,
+                ? `[${deptLabel}] Yêu cầu đã được phê duyệt`
+                : `[${deptLabel}] Yêu cầu bị từ chối`,
               message: cleanReviewNote
                 ? `"${updatedRequest.title}" - ${cleanReviewNote}`
-                : `"${updatedRequest.title}" đã được ${user.preferred_username} cập nhật.`,
+                : `"${updatedRequest.title}" đã được ${user.preferred_username} (${deptLabel}) cập nhật.`,
               actor: user.preferred_username,
             })
             .catch(() => {});
@@ -418,6 +494,95 @@ export class RequestController {
             : 'Đã cập nhật trạng thái yêu cầu.',
         data: updatedRequest,
         workflow,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteRequests(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+        return;
+      }
+
+      const rawIds = req.params.id
+        ? [req.params.id]
+        : (req.body as { ids?: unknown })?.ids;
+      if (!Array.isArray(rawIds) || rawIds.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Vui lòng chọn ít nhất một yêu cầu để xóa.',
+        });
+        return;
+      }
+
+      const ids = Array.from(
+        new Set(
+          rawIds.filter(
+            (item): item is string =>
+              typeof item === 'string' && UUID_REGEX.test(item.trim())
+          )
+        )
+      );
+      if (ids.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Danh sách mã yêu cầu không hợp lệ.',
+        });
+        return;
+      }
+
+      const rawMode =
+        (req.body as { mode?: unknown })?.mode ?? req.query.mode;
+      const deleteMode: RequestDeleteMode | undefined =
+        rawMode === 'history' || rawMode === 'manage' ? rawMode : undefined;
+
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      const { deleted, side, forbidden } = await requestService.deleteRequests(
+        ids,
+        {
+          ...user,
+          groups: resolvedGroups,
+        },
+        deleteMode
+      );
+
+      if (forbidden) {
+        res.status(403).json({
+          success: false,
+          message: 'Bạn không có quyền xóa một hoặc nhiều yêu cầu đã chọn.',
+        });
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+      for (const item of deleted) {
+        const payload = {
+          requestId: item.id,
+          action: 'DELETED',
+          timestamp,
+        };
+        if (side === 'sender') {
+          emitToUser(item.created_by, 'request:updated', payload);
+        } else {
+          emitToStaff('request:updated', payload, item.target_department);
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        side,
+        deleted_count: deleted.length,
+        data: deleted.map((d) => d.id),
       });
     } catch (error) {
       next(error);

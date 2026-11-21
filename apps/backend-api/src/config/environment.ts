@@ -4,9 +4,26 @@ import path from 'path';
 // Nạp file cấu hình môi trường
 dotenv.config();
 
+const realmUrl =
+  process.env.KEYCLOAK_REALM_URL || 'http://localhost:8080/realms/unirequest';
+
+function deriveKeycloakBaseAndRealm(url: string): {
+  adminUrl: string;
+  realm: string;
+} {
+  const match = url.match(/^(https?:\/\/.+?)\/realms\/([^/]+)\/?$/i);
+  if (match) {
+    return { adminUrl: match[1], realm: match[2] };
+  }
+  return { adminUrl: 'http://localhost:8080', realm: 'unirequest' };
+}
+
+const derivedKeycloak = deriveKeycloakBaseAndRealm(realmUrl);
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
+  timezone: process.env.TZ || 'Asia/Ho_Chi_Minh',
 
   database: {
     host: process.env.DB_HOST || 'localhost',
@@ -17,7 +34,11 @@ export const config = {
   },
 
   keycloak: {
-    realmUrl: process.env.KEYCLOAK_REALM_URL || 'http://localhost:8080/realms/unirequest',
+    realmUrl,
+    adminUrl: process.env.KEYCLOAK_ADMIN_URL || derivedKeycloak.adminUrl,
+    realm: process.env.KEYCLOAK_REALM || derivedKeycloak.realm,
+    adminUser: process.env.KC_ADMIN_USER || 'admin',
+    adminPassword: process.env.KC_ADMIN_PASSWORD || 'admin_dev_2026',
   },
 
   minio: {

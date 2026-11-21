@@ -57,10 +57,20 @@ export const verifyKeycloakJwt = async (token: string): Promise<KeycloakUser> =>
   const clientRoles = decoded.resource_access?.['unirequest-portal']?.roles || [];
   const combinedRoles = Array.from(new Set([...realmRoles, ...clientRoles]));
 
+  const rawGroups = Array.isArray(decoded.groups) ? decoded.groups : [];
+  const normalizedGroups = Array.from(
+    new Set(
+      rawGroups
+        .filter((g): g is string => typeof g === 'string' && g.trim().length > 0)
+        .map((g) => g.trim().replace(/^\/+/, ''))
+    )
+  );
+
   return {
     preferred_username: decoded.preferred_username || decoded.sub || 'unknown_user',
     email: decoded.email,
     roles: combinedRoles,
+    groups: normalizedGroups,
     sub: decoded.sub,
     realm_access: decoded.realm_access,
     resource_access: decoded.resource_access,
