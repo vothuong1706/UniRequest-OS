@@ -68,6 +68,20 @@ else
   echo -e "${RED}✘ Kỳ vọng HTTP 401 cho /api/notifications khi thiếu JWT, nhưng nhận HTTP $UNAUTH_NOTI_CODE${NC}"
   exit 1
 fi
+UNAUTH_DEPT_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/departments)
+if [ "$UNAUTH_DEPT_CODE" = "401" ]; then
+  echo -e "${GREEN}✔ API /api/departments chặn truy cập trái phép đúng chuẩn (HTTP 401)${NC}"
+else
+  echo -e "${RED}✘ Kỳ vọng HTTP 401 cho /api/departments khi thiếu JWT, nhưng nhận HTTP $UNAUTH_DEPT_CODE${NC}"
+  exit 1
+fi
+UNAUTH_KESTRA_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' http://localhost:8000/api/internal/kestra/sla-alert)
+if [ "$UNAUTH_KESTRA_CODE" = "401" ]; then
+  echo -e "${GREEN}✔ Callback /api/internal/kestra/sla-alert chặn truy cập thiếu x-kestra-key (HTTP 401)${NC}"
+else
+  echo -e "${RED}✘ Kỳ vọng HTTP 401 cho /api/internal/kestra/sla-alert khi thiếu key, nhưng nhận HTTP $UNAUTH_KESTRA_CODE${NC}"
+  exit 1
+fi
 UNAUTH_PUSH_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/push/subscribe)
 if [ "$UNAUTH_PUSH_CODE" = "401" ]; then
   echo -e "${GREEN}✔ API /api/push/subscribe chặn truy cập trái phép đúng chuẩn (HTTP 401)${NC}"
@@ -102,6 +116,15 @@ sh ./scripts/kestra-setup.sh
 WEBHOOK_KEY="${KESTRA_WEBHOOK_KEY:-unirequest-dxos-webhook-2026}"
 KESTRA_USER="${KESTRA_BASIC_AUTH_USER:-admin@unirequest.edu.vn}"
 KESTRA_PASS="${KESTRA_BASIC_AUTH_PASSWORD:-KestraAdmin2026!}"
+for flow_id in unirequest-lifecycle unirequest-sla-watchdog unirequest-daily-report; do
+  FLOW_CODE=$(curl -s -u "${KESTRA_USER}:${KESTRA_PASS}" -o /dev/null -w "%{http_code}" "http://localhost:8085/api/v1/main/flows/unirequest.dxos/${flow_id}")
+  if [ "$FLOW_CODE" = "200" ]; then
+    echo -e "${GREEN}✔ Kestra Flow [unirequest.dxos/${flow_id}] đã sẵn sàng (HTTP 200)${NC}"
+  else
+    echo -e "${RED}✘ Thiếu Kestra Flow [unirequest.dxos/${flow_id}] (HTTP $FLOW_CODE)${NC}"
+    exit 1
+  fi
+done
 EXEC_RESP=$(curl -sf -u "${KESTRA_USER}:${KESTRA_PASS}" -X POST "http://localhost:8085/api/v1/main/executions/webhook/unirequest.dxos/unirequest-lifecycle/${WEBHOOK_KEY}" \
   -H "Content-Type: application/json" \
   -d '{"event":"request.created","request_id":"e2e-probe-001","title":"E2E Workflow Probe","priority":"URGENT","status":"PENDING","created_by":"sinhvien"}')
@@ -111,4 +134,4 @@ echo "$EXEC_RESP" | grep -q '"id":' \
 
 echo -e "\n${GREEN}=================================================="
 echo "🎉 Toàn bộ 7/7 kiểm tra E2E UniRequest-OS ĐẠT CHUẨN!"
-echo "==================================================${NC}"
+echo -e "==================================================${NC}"

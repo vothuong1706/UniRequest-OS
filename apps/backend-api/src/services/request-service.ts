@@ -2,8 +2,11 @@ import { query } from '../config/database.js';
 import {
   AuditAction,
   CreateRequestDto,
+  KeycloakUser,
+  RequestAccessScope,
   RequestAnalyticsSummary,
   RequestAuditLogEntity,
+  RequestDeleteMode,
   RequestEntity,
   RequestPriority,
   RequestStatus,
@@ -13,6 +16,193 @@ const ELEVATED_ROLES = new Set(['canbo', 'giangvien', 'admin']);
 
 export function hasElevatedRole(roles: string[]): boolean {
   return roles.some((role) => ELEVATED_ROLES.has(role.toLowerCase()));
+}
+
+/**
+ * Chuẩn hóa danh sách Group từ JWT Token (hỗ trợ mọi tên group và path lồng nhau, vd: "CTSV", "KETOAN", "Lớp/K11A1").
+ */
+export function extractDepartmentGroups(groups: string[] = []): string[] {
+  return Array.from(
+    new Set(
+      groups
+        .map((group) => group.trim().replace(/^\/+/, ''))
+        .filter((group) => group.length > 0)
+    )
+  );
+}
+
+/**
+ * Xác định phạm vi dữ liệu theo thứ tự ưu tiên:
+ * 1. Role admin -> toàn trường (ALL)
+ * 2. Thuộc bất kỳ Group Keycloak nào (trừ trường hợp chỉ là sinhvien) -> lọc theo group đó và các group con bên trong (DEPARTMENT)
+ * 3. Cán bộ / giảng viên không gắn Group -> toàn trường (ALL)
+ * 4. Sinh viên -> chỉ yêu cầu do chính mình tạo (PERSONAL)
+ */
+export function resolveRequestAccessScope(
+  user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>
+): RequestAccessScope {
+  const roles = user.roles || [];
+  const lowerRoles = roles.map((r) => r.toLowerCase());
+
+  if (lowerRoles.includes('admin')) {
+    return { type: 'ALL' };
+  }
+
+  const departmentGroups = extractDepartmentGroups(user.groups);
+  const elevated = hasElevatedRole(roles);
+  const isStudentOnly = lowerRoles.includes('sinhvien') && !elevated;
+
+  if (departmentGroups.length > 0 && !isStudentOnly) {
+    return { type: 'DEPARTMENT', departments: departmentGroups };
+  }
+
+  if (elevated) {
+    return { type: 'ALL' };
+  }
+
+  return { type: 'PERSONAL', username: user.preferred_username };
+}
+
+export function hasStaffOrDepartmentAccess(
+  user: Pick<KeycloakUser, 'roles' | 'groups'>
+): boolean {
+  const roles = user.roles || [];
+  if (hasElevatedRole(roles)) return true;
+  const isStudent = roles.some((r) => r.toLowerCase() === 'sinhvien');
+  return !isStudent && extractDepartmentGroups(user.groups).length > 0;
+}
+
+export function matchesDepartmentAccess(
+  userDepartments: string[],
+  targetDepartment?: string | null
+): boolean {
+  const normalizedTarget = targetDepartment?.trim().replace(/^\/+/, '');
+  if (!normalizedTarget) return false;
+
+  return userDepartments.some(
+    (dept) =>
+      normalizedTarget === dept ||
+      normalizedTarget.startsWith(`${dept}/`) ||
+      (!dept.includes('/') && normalizedTarget.endsWith(`/${dept}`))
+  );
+}
+
+export function canViewRequest(
+  user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>,
+  request: Pick<
+    RequestEntity,
+    'created_by' | 'target_department' | 'hidden_by_sender' | 'hidden_by_receiver'
+  >
+): boolean {
+  if (request.created_by === user.preferred_username && !request.hidden_by_sender) {
+    return true;
+  }
+  const scope = resolveRequestAccessScope(user);
+  if (scope.type === 'ALL') {
+    return !request.hidden_by_receiver;
+  }
+  if (scope.type === 'DEPARTMENT') {
+    return (
+      !request.hidden_by_receiver &&
+      matchesDepartmentAccess(scope.departments, request.target_department)
+    );
+  }
+  return false;
+}
+
+export function canReviewRequest(
+  user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>,
+  request: Pick<RequestEntity, 'target_department'>
+): boolean {
+  const scope = resolveRequestAccessScope(user);
+  if (scope.type === 'ALL') return true;
+  if (scope.type === 'DEPARTMENT') {
+    return matchesDepartmentAccess(scope.departments, request.target_department);
+  }
+  return false;
+}
+
+function escapeSqlLike(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&');
+}
+
+export function buildDepartmentMatchSql(
+  departments: string[],
+  columnExpr: string,
+  startIndex = 1
+): { condition: string; params: unknown[] } {
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+
+  for (const dept of departments) {
+    const exactIdx = startIndex + params.length;
+    params.push(dept);
+    const childIdx = startIndex + params.length;
+    params.push(`${escapeSqlLike(dept)}/%`);
+
+    if (!dept.includes('/')) {
+      const leafIdx = startIndex + params.length;
+      params.push(`%/${escapeSqlLike(dept)}`);
+      clauses.push(
+        `(${columnExpr} = $${exactIdx} OR ${columnExpr} LIKE $${childIdx} ESCAPE '\\' OR ${columnExpr} LIKE $${leafIdx} ESCAPE '\\')`
+      );
+    } else {
+      clauses.push(
+        `(${columnExpr} = $${exactIdx} OR ${columnExpr} LIKE $${childIdx} ESCAPE '\\')`
+      );
+    }
+  }
+
+  return {
+    condition: `(${clauses.join(' OR ')})`,
+    params,
+  };
+}
+
+function buildScopeCondition(
+  scope: RequestAccessScope,
+  username: string,
+  options: { alias?: string; includePersonalForStaff?: boolean } = {}
+): { condition: string; params: unknown[] } {
+  const prefix = options.alias ? `${options.alias}.` : '';
+  const includePersonal = options.includePersonalForStaff ?? false;
+
+  if (scope.type === 'ALL') {
+    if (includePersonal) {
+      return {
+        condition: `(${prefix}hidden_by_receiver = FALSE OR (${prefix}created_by = $1 AND ${prefix}hidden_by_sender = FALSE))`,
+        params: [username],
+      };
+    }
+    return {
+      condition: `${prefix}hidden_by_receiver = FALSE`,
+      params: [],
+    };
+  }
+
+  if (scope.type === 'DEPARTMENT') {
+    const deptMatch = buildDepartmentMatchSql(
+      scope.departments,
+      `${prefix}target_department`,
+      1
+    );
+    if (includePersonal) {
+      const userIdx = deptMatch.params.length + 1;
+      return {
+        condition: `((${deptMatch.condition} AND ${prefix}hidden_by_receiver = FALSE) OR (${prefix}created_by = $${userIdx} AND ${prefix}hidden_by_sender = FALSE))`,
+        params: [...deptMatch.params, username],
+      };
+    }
+    return {
+      condition: `(${deptMatch.condition} AND ${prefix}hidden_by_receiver = FALSE)`,
+      params: deptMatch.params,
+    };
+  }
+
+  return {
+    condition: `${prefix}created_by = $1 AND ${prefix}hidden_by_sender = FALSE`,
+    params: [scope.username],
+  };
 }
 
 export class RequestService {
@@ -55,11 +245,12 @@ export class RequestService {
     const category = (dto.category || 'OTHER').trim().toUpperCase();
     const priority: RequestPriority = dto.priority ?? 'NORMAL';
     const customLabel = dto.custom_category_label?.trim() || null;
+    const targetDepartment = dto.target_department?.trim() || null;
 
     const sql = `
       INSERT INTO requests
-        (title, description, category, custom_category_label, priority, created_by, attachment_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (title, description, category, custom_category_label, target_department, priority, created_by, attachment_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *;
     `;
     const values = [
@@ -67,6 +258,7 @@ export class RequestService {
       dto.description ? dto.description.trim() : null,
       category,
       customLabel,
+      targetDepartment,
       priority,
       createdBy,
       dto.attachment_url || null,
@@ -87,6 +279,7 @@ export class RequestService {
       metadata: {
         category,
         custom_category_label: customLabel,
+        target_department: targetDepartment,
         priority,
         has_attachment: Boolean(created.attachment_url),
       },
@@ -120,15 +313,20 @@ export class RequestService {
     });
   }
 
-  async getRequests(username: string, roles: string[]): Promise<RequestEntity[]> {
-    if (hasElevatedRole(roles)) {
-      const result = await query(`SELECT * FROM requests ORDER BY created_at DESC;`);
-      return result.rows as RequestEntity[];
-    }
+  async getRequests(
+    user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>
+  ): Promise<RequestEntity[]> {
+    const scope = resolveRequestAccessScope(user);
+    const { condition, params } = buildScopeCondition(
+      scope,
+      user.preferred_username,
+      { includePersonalForStaff: true }
+    );
+    const whereClause = condition ? `WHERE ${condition}` : '';
 
     const result = await query(
-      `SELECT * FROM requests WHERE created_by = $1 ORDER BY created_at DESC;`,
-      [username]
+      `SELECT * FROM requests ${whereClause} ORDER BY created_at DESC;`,
+      params
     );
     return result.rows as RequestEntity[];
   }
@@ -192,13 +390,96 @@ export class RequestService {
     return updated;
   }
 
+  async deleteRequests(
+    ids: string[],
+    user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>,
+    mode?: RequestDeleteMode
+  ): Promise<{
+    deleted: Array<Pick<RequestEntity, 'id' | 'created_by' | 'target_department'>>;
+    side: 'sender' | 'receiver';
+    forbidden: boolean;
+  }> {
+    const scope = resolveRequestAccessScope(user);
+    const side: 'sender' | 'receiver' =
+      scope.type === 'PERSONAL' || mode === 'history' ? 'sender' : 'receiver';
+
+    if (ids.length === 0) {
+      return { deleted: [], side, forbidden: false };
+    }
+
+    const existingRes = await query(
+      `SELECT id, created_by, target_department, hidden_by_sender, hidden_by_receiver
+       FROM requests
+       WHERE id = ANY($1::uuid[]);`,
+      [ids]
+    );
+
+    const existingRows = existingRes.rows as Array<
+      Pick<
+        RequestEntity,
+        | 'id'
+        | 'created_by'
+        | 'target_department'
+        | 'hidden_by_sender'
+        | 'hidden_by_receiver'
+      >
+    >;
+    if (existingRows.length === 0) {
+      return { deleted: [], side, forbidden: false };
+    }
+
+    for (const row of existingRows) {
+      if (side === 'sender') {
+        if (row.created_by !== user.preferred_username) {
+          return { deleted: [], side, forbidden: true };
+        }
+      } else if (!canReviewRequest(user, row)) {
+        return { deleted: [], side, forbidden: true };
+      }
+    }
+
+    const authorizedIds = existingRows.map((row) => row.id);
+    const updateSql =
+      side === 'sender'
+        ? `UPDATE requests
+           SET hidden_by_sender = TRUE
+           WHERE id = ANY($1::uuid[])
+           RETURNING id, created_by, target_department;`
+        : `UPDATE requests
+           SET hidden_by_receiver = TRUE
+           WHERE id = ANY($1::uuid[])
+           RETURNING id, created_by, target_department;`;
+
+    const updatedRes = await query(updateSql, [authorizedIds]);
+
+    // Tự động xóa vĩnh viễn khỏi PostgreSQL khi cả Người gửi lẫn Người nhận đều đã xóa
+    await query(
+      `DELETE FROM requests
+       WHERE id = ANY($1::uuid[])
+         AND hidden_by_sender = TRUE
+         AND hidden_by_receiver = TRUE;`,
+      [authorizedIds]
+    );
+
+    return {
+      deleted: updatedRes.rows as Array<
+        Pick<RequestEntity, 'id' | 'created_by' | 'target_department'>
+      >,
+      side,
+      forbidden: false,
+    };
+  }
+
   async getAnalytics(
-    username: string,
-    roles: string[]
+    user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>
   ): Promise<RequestAnalyticsSummary> {
-    const elevated = hasElevatedRole(roles);
-    const whereClause = elevated ? '' : 'WHERE created_by = $1';
-    const params = elevated ? [] : [username];
+    const scope = resolveRequestAccessScope(user);
+    const { condition, params } = buildScopeCondition(
+      scope,
+      user.preferred_username,
+      { includePersonalForStaff: false }
+    );
+    const whereClause = condition ? `WHERE ${condition}` : '';
 
     const summaryResult = await query(
       `
@@ -230,7 +511,12 @@ export class RequestService {
       total > 0 ? Math.round(((approved + rejected) / total) * 100) : 0;
 
     // Nhóm động theo toàn bộ danh mục trong bảng request_categories + dữ liệu thực tế
-    const catJoinWhere = elevated ? '' : 'WHERE r.created_by = $1';
+    const { condition: catCondition } = buildScopeCondition(
+      scope,
+      user.preferred_username,
+      { alias: 'r', includePersonalForStaff: false }
+    );
+    const catJoinWhere = catCondition ? `WHERE ${catCondition}` : '';
     const categoryResult = await query(
       `
       SELECT
@@ -249,9 +535,9 @@ export class RequestService {
       params
     );
 
-    const trendWhere = elevated
-      ? `WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'`
-      : `WHERE created_by = $1 AND created_at >= CURRENT_DATE - INTERVAL '6 days'`;
+    const trendWhere = condition
+      ? `WHERE ${condition} AND created_at >= CURRENT_DATE - INTERVAL '6 days'`
+      : `WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'`;
 
     const trendResult = await query(
       `
@@ -270,7 +556,7 @@ export class RequestService {
     );
 
     return {
-      scope: elevated ? 'ALL' : 'PERSONAL',
+      scope: scope.type,
       total,
       by_status: {
         PENDING: pending,

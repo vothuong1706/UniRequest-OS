@@ -24,9 +24,11 @@ config/kong/db-data/
 config/minio/data/
 config/kestra/storage/
 
-# Tài liệu ghi chú / đặc tả nháp nội bộ (giữ nguyên docs/images/ cho README)
+# Tài liệu ghi chú / đặc tả nháp / báo cáo nội bộ (giữ nguyên docs/images/ cho README)
 docs/specs/
 docs/*.md
+BAOCAO/
+*.docx
 
 # IDE & Hệ điều hành
 .vscode/

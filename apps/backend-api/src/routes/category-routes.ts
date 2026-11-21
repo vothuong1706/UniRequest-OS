@@ -22,3 +22,11 @@ categoryRouter.put('/:id', requireStaffOrLecturer, (req, res, next) =>
 categoryRouter.patch('/:id/toggle', requireStaffOrLecturer, (req, res, next) =>
   categoryController.toggle(req, res, next)
 );
+
+categoryRouter.delete('/', requireStaffOrLecturer, (req, res, next) =>
+  categoryController.deleteMany(req, res, next)
+);
+
+categoryRouter.delete('/:id', requireStaffOrLecturer, (req, res, next) =>
+  categoryController.deleteMany(req, res, next)
+);

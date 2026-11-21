@@ -9,7 +9,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 SERVICE ?=
 
-.PHONY: help env up build down restart ps logs test smoke lint dev-fe dev-be clean
+.PHONY: help env up build down restart ps logs test smoke unit-test lint dev-fe dev-be clean
 
 help: ## Hiển thị danh sách toàn bộ lệnh hỗ trợ
 	@echo "=============================================================="
@@ -52,6 +52,13 @@ test: ## Chạy kịch bản kiểm thử E2E 7 bước (Kong, Keycloak, Backend
 
 smoke: test ## Bí danh (alias) của `make test`
 
+unit-test: ## Chạy bộ kiểm thử đơn vị (Vitest) cho cả Backend & Frontend
+	@echo "🧪 [1/2] Chạy Backend Unit & Route Tests (apps/backend-api)..."
+	cd apps/backend-api && npm test
+	@echo "🧪 [2/2] Chạy Frontend Unit Tests (apps/demo-app)..."
+	cd apps/demo-app && npm test
+	@echo "✅ Toàn bộ Unit Tests đạt 100%!"
+
 lint: ## Kiểm tra Clean Code cho cả Frontend (tsc, eslint, prettier, build) & Backend (tsc)
 	@echo "🔍 [1/3] Kiểm tra Frontend (apps/demo-app)..."
 	cd apps/demo-app && npm run typecheck && npm run lint && npm run format:check && npm run build
@@ -73,7 +80,9 @@ clean: ## [NGUY HIỂM] Dừng hệ thống và xóa toàn bộ container, netwo
 	@read -r -p "Nhập chính xác 'YES' để xác nhận xóa toàn bộ dữ liệu: " confirm; \
 	if [ "$$confirm" = "YES" ]; then \
 		$(COMPOSE) down -v --remove-orphans; \
-		rm -rf config/postgres/data config/kong/db-data config/minio/data; \
+		rm -rf config/postgres/data config/kong/db-data config/minio/data 2>/dev/null || \
+			docker run --rm -v "$$(pwd)/config:/cfg" postgres:16-alpine rm -rf /cfg/postgres/data /cfg/kong/db-data /cfg/minio/data 2>/dev/null || \
+			sudo rm -rf config/postgres/data config/kong/db-data config/minio/data 2>/dev/null || true; \
 		echo "🧹 Đã dọn sạch container, volumes và dữ liệu cục bộ."; \
 	else \
 		echo "✖ Đã hủy thao tác make clean (dữ liệu được giữ an toàn)."; \

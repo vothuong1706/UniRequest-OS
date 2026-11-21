@@ -50,3 +50,11 @@ export function CategoryBadge({ label }: { label: string }) {
     </Badge>
   );
 }
+
+export function DepartmentBadge({ label }: { label: string }) {
+  return (
+    <Badge variant="secondary" className="max-w-40 truncate text-[11px] font-normal">
+      {label}
+    </Badge>
+  );
+}

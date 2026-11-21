@@ -1,28 +1,68 @@
 import { query } from '../config/database.js';
 import {
   CreateCategoryDto,
+  KeycloakUser,
+  RequestAccessScope,
   RequestCategoryEntity,
   UpdateCategoryDto,
 } from '../types/request.js';
+import {
+  buildDepartmentMatchSql,
+  canReviewRequest,
+  resolveRequestAccessScope,
+} from './request-service.js';
 
-function slugifyCode(input: string): string {
-  const ascii = input
+function slugifyPart(input: string): string {
+  return input
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/gi, 'd')
     .toUpperCase()
     .replace(/[^A-Z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .slice(0, 48);
-  return ascii || `CAT_${Date.now().toString().slice(-6)}`;
+    .replace(/^_+|_+$/g, '');
+}
+
+function buildCategoryCode(department: string, name: string, explicitCode?: string): string {
+  if (explicitCode?.trim()) {
+    return slugifyPart(explicitCode).slice(0, 56) || `CAT_${Date.now().toString().slice(-6)}`;
+  }
+  const deptPart = slugifyPart(department).slice(0, 20);
+  const namePart = slugifyPart(name).slice(0, 32);
+  const combined = [deptPart, namePart].filter(Boolean).join('_').slice(0, 54);
+  return combined || `CAT_${Date.now().toString().slice(-6)}`;
 }
 
 export class CategoryService {
-  async list(includeInactive = false): Promise<RequestCategoryEntity[]> {
-    const sql = includeInactive
-      ? `SELECT * FROM request_categories ORDER BY sort_order ASC, name ASC;`
-      : `SELECT * FROM request_categories WHERE is_active = TRUE ORDER BY sort_order ASC, name ASC;`;
-    const result = await query(sql);
+  async list(options: {
+    includeInactive?: boolean;
+    scope?: RequestAccessScope;
+    department?: string;
+  } = {}): Promise<RequestCategoryEntity[]> {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (!options.includeInactive) {
+      conditions.push('is_active = TRUE');
+    }
+
+    if (options.department?.trim()) {
+      const cleanDept = options.department.trim().replace(/^\/+/, '');
+      const deptSql = buildDepartmentMatchSql([cleanDept], 'department', params.length + 1);
+      conditions.push(deptSql.condition);
+      params.push(...deptSql.params);
+    } else if (options.scope?.type === 'DEPARTMENT') {
+      const deptSql = buildDepartmentMatchSql(
+        options.scope.departments,
+        'department',
+        params.length + 1
+      );
+      conditions.push(deptSql.condition);
+      params.push(...deptSql.params);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `SELECT * FROM request_categories ${whereClause} ORDER BY sort_order ASC, name ASC;`;
+    const result = await query(sql, params);
     return result.rows as RequestCategoryEntity[];
   }
 
@@ -43,9 +83,14 @@ export class CategoryService {
   }
 
   async create(dto: CreateCategoryDto): Promise<RequestCategoryEntity> {
-    const code = dto.code?.trim()
-      ? slugifyCode(dto.code)
-      : slugifyCode(dto.name);
+    const cleanDept = dto.department.trim().replace(/^\/+/, '');
+    let code = buildCategoryCode(cleanDept, dto.name, dto.code);
+
+    const existingCode = await this.getByCode(code);
+    if (existingCode) {
+      code = `${code.slice(0, 48)}_${Date.now().toString(36).toUpperCase().slice(-5)}`;
+    }
+
     const slaHours = Number.isFinite(dto.sla_hours)
       ? Math.max(1, Math.min(720, Number(dto.sla_hours)))
       : 24;
@@ -62,7 +107,7 @@ export class CategoryService {
     const result = await query(sql, [
       code,
       dto.name.trim(),
-      dto.department.trim(),
+      cleanDept,
       slaHours,
       Boolean(dto.requires_evidence),
       sortOrder,
@@ -78,7 +123,9 @@ export class CategoryService {
     if (!existing) return null;
 
     const nextName = dto.name?.trim() || existing.name;
-    const nextDept = dto.department?.trim() || existing.department;
+    const nextDept = dto.department?.trim()
+      ? dto.department.trim().replace(/^\/+/, '')
+      : existing.department;
     const nextSla = Number.isFinite(dto.sla_hours)
       ? Math.max(1, Math.min(720, Number(dto.sla_hours)))
       : existing.sla_hours;
@@ -118,9 +165,7 @@ export class CategoryService {
   async toggleActive(id: string): Promise<RequestCategoryEntity | null> {
     const existing = await this.getById(id);
     if (!existing) return null;
-    if (existing.code.toUpperCase() === 'OTHER' && existing.is_active) {
-      throw new Error('Không thể ẩn danh mục mặc định "Yêu cầu khác".');
-    }
+
     const sql = `
       UPDATE request_categories
       SET is_active = NOT is_active
@@ -129,6 +174,45 @@ export class CategoryService {
     `;
     const result = await query(sql, [id]);
     return (result.rows[0] as RequestCategoryEntity) || null;
+  }
+
+  async deleteMany(
+    ids: string[],
+    user: Pick<KeycloakUser, 'preferred_username' | 'roles' | 'groups'>
+  ): Promise<{ deletedIds: string[]; forbidden: boolean }> {
+    if (ids.length === 0) {
+      return { deletedIds: [], forbidden: false };
+    }
+
+    const existingRes = await query(
+      `SELECT id, department FROM request_categories WHERE id = ANY($1::uuid[]);`,
+      [ids]
+    );
+    const rows = existingRes.rows as Array<{ id: string; department: string }>;
+    if (rows.length === 0) {
+      return { deletedIds: [], forbidden: false };
+    }
+
+    const scope = resolveRequestAccessScope(user);
+    if (scope.type === 'PERSONAL') {
+      return { deletedIds: [], forbidden: true };
+    }
+
+    for (const row of rows) {
+      if (!canReviewRequest(user, { target_department: row.department })) {
+        return { deletedIds: [], forbidden: true };
+      }
+    }
+
+    const authorizedIds = rows.map((r) => r.id);
+    const deleteRes = await query(
+      `DELETE FROM request_categories WHERE id = ANY($1::uuid[]) RETURNING id;`,
+      [authorizedIds]
+    );
+    return {
+      deletedIds: (deleteRes.rows as Array<{ id: string }>).map((r) => r.id),
+      forbidden: false,
+    };
   }
 }
 

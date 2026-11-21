@@ -32,21 +32,24 @@ import {
 } from '@/components/ui/table';
 import {
   CategoryBadge,
+  DepartmentBadge,
   PriorityBadge,
   StatusBadge,
 } from '@/features/requests/components/status-badge';
 import type {
+  DepartmentGroupItem,
   RequestAnalytics,
   RequestCategoryItem,
   RequestItem,
   StatusFilter,
 } from '@/features/requests/types';
 import { resolveRequestDisplay } from '@/features/requests/utils/priority';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, getDateKeyInAppTimezone } from '@/lib/format';
 
 interface DashboardViewProps {
   requests: RequestItem[];
   categories: RequestCategoryItem[];
+  departments: DepartmentGroupItem[];
   analytics: RequestAnalytics | null;
   loading: boolean;
   isStaff: boolean;
@@ -66,6 +69,7 @@ function formatShortDay(isoDate: string): string {
 export function DashboardView({
   requests,
   categories,
+  departments,
   analytics,
   loading,
   isStaff,
@@ -132,9 +136,7 @@ export function DashboardView({
     const days: Array<{ date: string; label: string; total: number }> = [];
     const today = new Date();
     for (let i = 6; i >= 0; i -= 1) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const iso = d.toISOString().slice(0, 10);
+      const iso = getDateKeyInAppTimezone(new Date(today.getTime() - i * 86_400_000));
       days.push({
         date: iso,
         label: formatShortDay(iso),
@@ -183,16 +185,9 @@ export function DashboardView({
     <div className="space-y-6">
       {/* Page Heading */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Xin chào, {greetingName}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {isStaff
-              ? 'Tổng quan tình hình tiếp nhận và xử lý yêu cầu toàn trường.'
-              : 'Theo dõi trạng thái các yêu cầu bạn đã gửi hoặc tạo mới.'}
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Xin chào, {greetingName}
+        </h1>
 
         <div className="flex items-center gap-2">
           <Button
@@ -266,15 +261,10 @@ export function DashboardView({
           {/* 7-Day Trend Bar Chart */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="size-4" />
-                  <span>Xu hướng 7 ngày gần nhất</span>
-                </CardTitle>
-                <CardDescription className="mt-0.5 text-xs">
-                  Số lượng yêu cầu tiếp nhận theo ngày
-                </CardDescription>
-              </div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="size-4" />
+                <span>Xu hướng 7 ngày gần nhất</span>
+              </CardTitle>
               {analytics?.avg_resolution_hours !== null &&
                 analytics?.avg_resolution_hours !== undefined && (
                   <Badge variant="outline" className="font-normal tabular-nums">
@@ -320,15 +310,10 @@ export function DashboardView({
           {/* Dynamic Category Distribution */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <BarChart3 className="size-4" />
-                  <span>Phân bổ theo danh mục</span>
-                </CardTitle>
-                <CardDescription className="mt-0.5 text-xs">
-                  Các nhóm yêu cầu phát sinh nhiều nhất
-                </CardDescription>
-              </div>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BarChart3 className="size-4" />
+                <span>Phân bổ theo danh mục</span>
+              </CardTitle>
               <Badge variant="outline" className="font-normal tabular-nums">
                 Hoàn tất {completionRate}%
               </Badge>
@@ -390,11 +375,6 @@ export function DashboardView({
             <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
               <Inbox className="text-muted-foreground mb-3 size-8" />
               <p className="text-sm font-medium">Chưa có yêu cầu nào</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {isStaff
-                  ? 'Hệ thống hiện chưa ghi nhận yêu cầu mới nào.'
-                  : 'Tạo yêu cầu đầu tiên để bắt đầu theo dõi tiến độ xử lý.'}
-              </p>
               {!isStaff && (
                 <Button
                   type="button"
@@ -421,8 +401,12 @@ export function DashboardView({
               </TableHeader>
               <TableBody>
                 {recentRequests.map((req) => {
-                  const { categoryLabel, priority, cleanDescription } =
-                    resolveRequestDisplay(req, categories);
+                  const {
+                    categoryLabel,
+                    targetDepartmentLabel,
+                    priority,
+                    cleanDescription,
+                  } = resolveRequestDisplay(req, categories, departments);
 
                   return (
                     <TableRow
@@ -444,8 +428,11 @@ export function DashboardView({
                         </TableCell>
                       )}
                       <TableCell className="whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <CategoryBadge label={categoryLabel} />
+                          {targetDepartmentLabel && (
+                            <DepartmentBadge label={targetDepartmentLabel} />
+                          )}
                           {priority !== 'NORMAL' && <PriorityBadge priority={priority} />}
                         </div>
                       </TableCell>

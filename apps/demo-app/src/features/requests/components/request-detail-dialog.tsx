@@ -22,6 +22,7 @@ import { formatDateTime, isImageUrl } from '@/lib/format';
 import { requestsApi } from '@/services/api-client';
 import type {
   AuditAction,
+  DepartmentGroupItem,
   RequestAuditLog,
   RequestCategoryItem,
   RequestCommentItem,
@@ -31,11 +32,17 @@ import type {
 } from '../types';
 import { getPriorityLabel, resolveRequestDisplay } from '../utils/priority';
 import { RequestCommentsPanel } from './request-comments-panel';
-import { CategoryBadge, PriorityBadge, StatusBadge } from './status-badge';
+import {
+  CategoryBadge,
+  DepartmentBadge,
+  PriorityBadge,
+  StatusBadge,
+} from './status-badge';
 
 interface RequestDetailDialogProps {
   request: RequestItem | null;
   categories: RequestCategoryItem[];
+  departments: DepartmentGroupItem[];
   currentUsername: string;
   incomingComment: RequestCommentItem | null;
   canReview: boolean;
@@ -49,6 +56,7 @@ const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   APPROVED: 'Đã phê duyệt',
   REJECTED: 'Đã từ chối',
   PENDING: 'Chuyển về chờ duyệt',
+  SLA_WARNING: 'Cảnh báo quá hạn xử lý (Kestra SLA)',
 };
 
 function escapeHtml(text: string): string {
@@ -62,11 +70,13 @@ function escapeHtml(text: string): string {
 function printRequestReceipt(
   item: RequestItem,
   categories: RequestCategoryItem[],
+  departments: DepartmentGroupItem[],
   auditLogs: RequestAuditLog[]
 ): void {
   const { categoryLabel, department, priority, cleanDescription } = resolveRequestDisplay(
     item,
-    categories
+    categories,
+    departments
   );
   const statusText =
     item.status === 'APPROVED'
@@ -146,6 +156,7 @@ function printRequestReceipt(
 export function RequestDetailDialog({
   request,
   categories,
+  departments,
   currentUsername,
   incomingComment,
   canReview,
@@ -187,10 +198,8 @@ export function RequestDetailDialog({
   const loadingDetail = loadedId !== request.id;
   const activeItem: RequestItem = matchedDetail ?? request;
   const auditLogs = matchedDetail?.audit_logs ?? [];
-  const { categoryLabel, department, priority, cleanDescription } = resolveRequestDisplay(
-    activeItem,
-    categories
-  );
+  const { categoryLabel, department, targetDepartmentLabel, priority, cleanDescription } =
+    resolveRequestDisplay(activeItem, categories, departments);
   const hasImagePreview = isImageUrl(activeItem.attachment_url);
 
   return (
@@ -200,6 +209,7 @@ export function RequestDetailDialog({
           <div className="flex flex-wrap items-center gap-2 pr-6">
             <StatusBadge status={activeItem.status} />
             <CategoryBadge label={categoryLabel} />
+            {targetDepartmentLabel && <DepartmentBadge label={targetDepartmentLabel} />}
             {priority !== 'NORMAL' && <PriorityBadge priority={priority} />}
           </div>
           <DialogTitle className="pt-1 leading-snug">{activeItem.title}</DialogTitle>
@@ -313,7 +323,9 @@ export function RequestDetailDialog({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => printRequestReceipt(activeItem, categories, auditLogs)}
+            onClick={() =>
+              printRequestReceipt(activeItem, categories, departments, auditLogs)
+            }
           >
             <Printer className="size-3.5" />
             <span>In phiếu xác nhận</span>

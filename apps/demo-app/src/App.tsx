@@ -4,6 +4,7 @@ import { Toaster, toast } from 'sonner';
 import {
   getRawUserRoles,
   getTokenUsername,
+  getUserGroups,
   initKeycloak,
   isStaffOrLecturer,
   loadUserProfile,
@@ -26,15 +27,22 @@ import { RequestDetailDialog } from '@/features/requests/components/request-deta
 import { RequestFormView } from '@/features/requests/components/request-form-view';
 import { RequestListView } from '@/features/requests/components/request-list-view';
 import type {
+  DepartmentGroupItem,
   NotificationItem,
   RequestAnalytics,
   RequestCategoryItem,
   RequestCommentItem,
+  RequestDeleteMode,
   RequestItem,
   RequestStatus,
   StatusFilter,
 } from '@/features/requests/types';
-import { categoriesApi, notificationsApi, requestsApi } from '@/services/api-client';
+import {
+  categoriesApi,
+  departmentsApi,
+  notificationsApi,
+  requestsApi,
+} from '@/services/api-client';
 
 function PortalWorkspace() {
   const { theme } = useTheme();
@@ -48,12 +56,15 @@ function PortalWorkspace() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [categories, setCategories] = useState<RequestCategoryItem[]>([]);
+  const [managedCategories, setManagedCategories] = useState<RequestCategoryItem[]>([]);
+  const [departments, setDepartments] = useState<DepartmentGroupItem[]>([]);
   const [analytics, setAnalytics] = useState<RequestAnalytics | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
 
   const [inspectedRequest, setInspectedRequest] = useState<RequestItem | null>(null);
   const [latestComment, setLatestComment] = useState<RequestCommentItem | null>(null);
@@ -70,7 +81,8 @@ function PortalWorkspace() {
     notificationsRef.current = notifications;
   }, [notifications]);
 
-  const isStaff = isStaffOrLecturer(userRoles);
+  const userGroups = getUserGroups();
+  const isStaff = isStaffOrLecturer(userRoles, userGroups);
   const currentUsername = userInfo?.preferred_username || getTokenUsername();
 
   const loadNotifications = useCallback(async () => {
@@ -131,17 +143,37 @@ function PortalWorkspace() {
     [markRequestNotificationsRead]
   );
 
-  const loadCategories = useCallback(async (includeInactive: boolean) => {
+  const loadCategories = useCallback(async () => {
     setLoadingCategories(true);
     try {
-      const res = await categoriesApi.list(includeInactive);
-      if (res.success && Array.isArray(res.data)) {
-        setCategories(res.data);
+      const [activeRes, manageRes] = await Promise.all([
+        categoriesApi.list(false),
+        categoriesApi.list(true),
+      ]);
+      if (activeRes.success && Array.isArray(activeRes.data)) {
+        setCategories(activeRes.data);
+      }
+      if (manageRes.success && Array.isArray(manageRes.data)) {
+        setManagedCategories(manageRes.data);
       }
     } catch {
       // Fall back gracefully
     } finally {
       setLoadingCategories(false);
+    }
+  }, []);
+
+  const loadDepartments = useCallback(async (forceRefresh = false) => {
+    setLoadingDepartments(true);
+    try {
+      const res = await departmentsApi.list(forceRefresh);
+      if (res.success && Array.isArray(res.data)) {
+        setDepartments(res.data);
+      }
+    } catch {
+      // Fall back gracefully
+    } finally {
+      setLoadingDepartments(false);
     }
   }, []);
 
@@ -169,10 +201,19 @@ function PortalWorkspace() {
   const loadWorkspaceData = useCallback(async () => {
     setLoadingRequests(true);
     try {
-      const [listRes, analyticsRes, categoriesRes, notiRes] = await Promise.all([
+      const [
+        listRes,
+        analyticsRes,
+        activeCategoriesRes,
+        manageCategoriesRes,
+        departmentsRes,
+        notiRes,
+      ] = await Promise.all([
         requestsApi.list(),
         requestsApi.analytics().catch(() => null),
+        categoriesApi.list(false).catch(() => null),
         categoriesApi.list(true).catch(() => null),
+        departmentsApi.list().catch(() => null),
         notificationsApi.list(40).catch(() => null),
       ]);
 
@@ -182,8 +223,14 @@ function PortalWorkspace() {
       if (analyticsRes?.success && analyticsRes.data) {
         setAnalytics(analyticsRes.data);
       }
-      if (categoriesRes?.success && Array.isArray(categoriesRes.data)) {
-        setCategories(categoriesRes.data);
+      if (activeCategoriesRes?.success && Array.isArray(activeCategoriesRes.data)) {
+        setCategories(activeCategoriesRes.data);
+      }
+      if (manageCategoriesRes?.success && Array.isArray(manageCategoriesRes.data)) {
+        setManagedCategories(manageCategoriesRes.data);
+      }
+      if (departmentsRes?.success && Array.isArray(departmentsRes.data)) {
+        setDepartments(departmentsRes.data);
       }
       if (notiRes?.success && notiRes.data) {
         setNotifications(notiRes.data.items);
@@ -346,7 +393,10 @@ function PortalWorkspace() {
     };
   }, [authenticated, markRequestNotificationsRead]);
 
-  const pendingCount = requests.filter((r) => r.status === 'PENDING').length;
+  const pendingCount = requests.filter(
+    (r) =>
+      r.status === 'PENDING' && (isStaff ? !r.hidden_by_receiver : !r.hidden_by_sender)
+  ).length;
 
   const handleNavigate = (page: PageId) => {
     if ((page === 'manage' || page === 'categories') && !isStaff) {
@@ -445,6 +495,48 @@ function PortalWorkspace() {
     }
   };
 
+  const handleDeleteRequests = useCallback(
+    async (ids: string[], mode: RequestDeleteMode) => {
+      if (ids.length === 0) return;
+      try {
+        const res = await requestsApi.deleteMany(ids, mode);
+        if (res.success) {
+          const deletedSet = new Set(res.data ?? ids);
+          setRequests((prev) =>
+            prev
+              .map((item) => {
+                if (!deletedSet.has(item.id)) return item;
+                return mode === 'history'
+                  ? { ...item, hidden_by_sender: true }
+                  : { ...item, hidden_by_receiver: true };
+              })
+              .filter((item) => {
+                if (!deletedSet.has(item.id)) return true;
+                if (item.hidden_by_sender && item.hidden_by_receiver) return false;
+                if (!isStaff) return !item.hidden_by_sender;
+                const keepInHistory =
+                  item.created_by === currentUsername && !item.hidden_by_sender;
+                const keepInManage = !item.hidden_by_receiver;
+                return keepInHistory || keepInManage;
+              })
+          );
+          setInspectedRequest((prev) => (prev && deletedSet.has(prev.id) ? null : prev));
+          void requestsApi
+            .analytics()
+            .then((a) => {
+              if (a.success && a.data) setAnalytics(a.data);
+            })
+            .catch(() => {});
+          void loadNotifications();
+          toast.success(`Đã xóa ${deletedSet.size} yêu cầu.`);
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Không thể xóa yêu cầu.');
+      }
+    },
+    [currentUsername, isStaff, loadNotifications]
+  );
+
   return (
     <>
       <Toaster theme={theme} position="top-right" richColors closeButton />
@@ -485,8 +577,11 @@ function PortalWorkspace() {
         >
           {activePage === 'dashboard' && (
             <DashboardView
-              requests={requests}
+              requests={requests.filter((r) =>
+                isStaff ? !r.hidden_by_receiver : !r.hidden_by_sender
+              )}
               categories={categories}
+              departments={departments}
               analytics={analytics}
               loading={loadingRequests}
               isStaff={isStaff}
@@ -501,6 +596,9 @@ function PortalWorkspace() {
           {activePage === 'create' && (
             <RequestFormView
               categories={categories}
+              departments={departments}
+              loadingDepartments={loadingDepartments}
+              onRefreshDepartments={() => loadDepartments(true)}
               isStaff={isStaff}
               onCreated={handleCreated}
             />
@@ -511,6 +609,7 @@ function PortalWorkspace() {
               mode="history"
               requests={requests}
               categories={categories}
+              departments={departments}
               loading={loadingRequests}
               isStaff={isStaff}
               currentUsername={currentUsername}
@@ -521,6 +620,7 @@ function PortalWorkspace() {
               onRequestStatusChange={(request, nextStatus) =>
                 setConfirmTarget({ request, nextStatus })
               }
+              onDeleteRequests={(ids) => handleDeleteRequests(ids, 'history')}
               onNavigate={handleNavigate}
             />
           )}
@@ -530,6 +630,7 @@ function PortalWorkspace() {
               mode="manage"
               requests={requests}
               categories={categories}
+              departments={departments}
               loading={loadingRequests}
               isStaff={isStaff}
               currentUsername={currentUsername}
@@ -540,15 +641,19 @@ function PortalWorkspace() {
               onRequestStatusChange={(request, nextStatus) =>
                 setConfirmTarget({ request, nextStatus })
               }
+              onDeleteRequests={(ids) => handleDeleteRequests(ids, 'manage')}
               onNavigate={handleNavigate}
             />
           )}
 
           {activePage === 'categories' && isStaff && (
             <CategoriesView
-              categories={categories}
+              categories={managedCategories}
+              departments={departments}
+              userRoles={userRoles}
+              userGroups={userGroups}
               loading={loadingCategories}
-              onReload={() => loadCategories(true)}
+              onReload={loadCategories}
             />
           )}
         </AppShell>
@@ -557,6 +662,7 @@ function PortalWorkspace() {
       <RequestDetailDialog
         request={inspectedRequest}
         categories={categories}
+        departments={departments}
         currentUsername={currentUsername}
         incomingComment={latestComment}
         canReview={isStaff}

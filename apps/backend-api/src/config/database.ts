@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import pg from 'pg';
 import { config } from './environment.js';
 
@@ -12,6 +14,17 @@ export const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+});
+
+const SAFE_TZ_REGEX = /^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)*$/;
+const sessionTimeZone = SAFE_TZ_REGEX.test(config.timezone)
+  ? config.timezone
+  : 'Asia/Ho_Chi_Minh';
+
+pool.on('connect', (client) => {
+  void client.query(`SET TIME ZONE '${sessionTimeZone}'`).catch((err: Error) => {
+    console.warn('[Database] Không thể thiết lập TIME ZONE phiên làm việc:', err.message);
+  });
 });
 
 pool.on('error', (err) => {
@@ -42,28 +55,12 @@ export const checkDatabaseConnection = async (): Promise<boolean> => {
 };
 
 export const ensureTablesExist = async (): Promise<void> => {
-  const createTableSql = `
-    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
-    CREATE TABLE IF NOT EXISTS requests (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        title VARCHAR(255) NOT NULL,
-        description TEXT,
-        status VARCHAR(50) DEFAULT 'PENDING',
-        created_by VARCHAR(100) NOT NULL,
-        attachment_url TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE INDEX IF NOT EXISTS idx_requests_created_by ON requests(created_by);
-    CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
-    CREATE INDEX IF NOT EXISTS idx_requests_created_at ON requests(created_at DESC);
-  `;
   try {
-    await query(createTableSql);
-    console.log('[Database] Kiểm tra và khởi tạo bảng requests hoàn tất.');
+    const schemaPath = path.resolve(__dirname, '../../db/init.sql');
+    const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
+    await query(schemaSql);
+    console.log('[Database] Kiểm tra và đồng bộ toàn bộ schema CSDL (db/init.sql) hoàn tất.');
   } catch (error) {
-    console.error('[Database] Lỗi khi tạo bảng requests:', error);
+    console.error('[Database] Lỗi khi đồng bộ schema CSDL:', error);
   }
 };

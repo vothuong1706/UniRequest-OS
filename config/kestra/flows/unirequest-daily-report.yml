@@ -1,0 +1,81 @@
+id: unirequest-daily-report
+namespace: unirequest.dxos
+description: >
+  Báo cáo tổng hợp tự động cuối ngày (17:30 hằng ngày hoặc chạy tay): truy vấn
+  thống kê theo từng Ban từ PostgreSQL, xuất CSV và lưu trữ lên MinIO.
+
+tasks:
+  - id: collect_statistics
+    type: io.kestra.plugin.core.flow.Parallel
+    tasks:
+      - id: query_department_breakdown
+        type: io.kestra.plugin.jdbc.postgresql.Query
+        url: "{{ envs.db_url }}"
+        username: "{{ envs.db_user }}"
+        password: "{{ envs.db_password }}"
+        sql: >-
+          SELECT
+            COALESCE(target_department, 'Chua_phan_tuyen') AS target_department,
+            COUNT(*)::int AS total_requests,
+            COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pending_count,
+            COUNT(*) FILTER (WHERE status = 'APPROVED')::int AS approved_count,
+            COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS rejected_count,
+            COUNT(*) FILTER (WHERE priority = 'URGENT')::int AS urgent_count,
+            COALESCE(
+              ROUND(
+                AVG(EXTRACT(EPOCH FROM (reviewed_at - created_at)) / 3600.0)
+                FILTER (WHERE reviewed_at IS NOT NULL)::numeric,
+                1
+              ),
+              0
+            ) AS avg_resolution_hours
+          FROM requests
+          WHERE hidden_by_receiver = FALSE
+          GROUP BY COALESCE(target_department, 'Chua_phan_tuyen')
+          ORDER BY total_requests DESC, target_department ASC;
+        fetchType: STORE
+
+      - id: query_kpi_summary
+        type: io.kestra.plugin.jdbc.postgresql.Query
+        url: "{{ envs.db_url }}"
+        username: "{{ envs.db_user }}"
+        password: "{{ envs.db_password }}"
+        sql: >-
+          SELECT
+            COUNT(*)::int AS total_active,
+            COUNT(*) FILTER (WHERE status = 'PENDING')::int AS total_pending,
+            COUNT(*) FILTER (WHERE status = 'APPROVED')::int AS total_approved,
+            COUNT(*) FILTER (WHERE status = 'REJECTED')::int AS total_rejected
+          FROM requests
+          WHERE hidden_by_receiver = FALSE;
+        fetchType: FETCH_ONE
+
+  - id: export_csv
+    type: io.kestra.plugin.serdes.csv.IonToCsv
+    from: "{{ outputs.query_department_breakdown.uri }}"
+    header: true
+
+  - id: upload_report_to_minio
+    type: io.kestra.plugin.minio.Upload
+    endpoint: "{{ envs.minio_endpoint }}"
+    accessKeyId: "{{ envs.minio_access_key }}"
+    secretKeyId: "{{ envs.minio_secret_key }}"
+    bucket: "unirequest-files"
+    from: "{{ outputs.export_csv.uri }}"
+    key: "reports/daily/unirequest-report-{{ execution.startDate | date('yyyy-MM-dd_HHmm', timeZone='Asia/Ho_Chi_Minh') }}.csv"
+    contentType: "text/csv"
+
+  - id: log_report_summary
+    type: io.kestra.plugin.core.log.Log
+    message: >-
+      [DAILY-REPORT] Tổng={{ outputs.query_kpi_summary.row.total_active ?? 0 }} |
+      Chờ duyệt={{ outputs.query_kpi_summary.row.total_pending ?? 0 }} |
+      Đã duyệt={{ outputs.query_kpi_summary.row.total_approved ?? 0 }} |
+      Từ chối={{ outputs.query_kpi_summary.row.total_rejected ?? 0 }} |
+      MinIO Key=unirequest-files/reports/daily/unirequest-report-{{ execution.startDate | date('yyyy-MM-dd_HHmm', timeZone='Asia/Ho_Chi_Minh') }}.csv
+
+triggers:
+  - id: daily_at_1730
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "30 17 * * *"
+    timezone: Asia/Ho_Chi_Minh

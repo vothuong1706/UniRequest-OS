@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { categoryRouter } from './category-routes.js';
+import { departmentRouter } from './department-routes.js';
+import { internalKestraRouter } from './internal-kestra-routes.js';
 import { notificationRouter } from './notification-routes.js';
 import { pushRouter } from './push-routes.js';
 import { requestRouter } from './request-routes.js';
@@ -46,6 +48,8 @@ apiRouter.get('/health', async (_req, res) => {
 
 // Gắn các router nhánh
 apiRouter.use('/categories', categoryRouter);
+apiRouter.use('/departments', departmentRouter);
+apiRouter.use('/internal/kestra', internalKestraRouter);
 apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/push', pushRouter);
 apiRouter.use('/requests', requestRouter);

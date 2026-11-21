@@ -56,6 +56,18 @@ export function getRawUserRoles(): string[] {
   return keycloak.realmAccess?.roles ?? [];
 }
 
+export function getUserGroups(): string[] {
+  const parsed = keycloak.tokenParsed as { groups?: unknown } | undefined;
+  if (!Array.isArray(parsed?.groups)) return [];
+  return Array.from(
+    new Set(
+      parsed.groups
+        .filter((g): g is string => typeof g === 'string' && g.trim().length > 0)
+        .map((g) => g.trim().replace(/^\/+/, ''))
+    )
+  );
+}
+
 export function getTokenUsername(): string {
   const parsed = keycloak.tokenParsed as { preferred_username?: string } | undefined;
   return parsed?.preferred_username ?? '';
@@ -65,8 +77,15 @@ export function getDisplayRoles(roles: string[] = getRawUserRoles()): string[] {
   return roles.filter((role) => !IGNORED_SYSTEM_ROLES.has(role));
 }
 
-export function isStaffOrLecturer(roles: string[] = getRawUserRoles()): boolean {
-  return STAFF_ROLES.some((role) => roles.includes(role));
+export function isStaffOrLecturer(
+  roles: string[] = getRawUserRoles(),
+  groups: string[] = getUserGroups()
+): boolean {
+  if (STAFF_ROLES.some((role) => roles.includes(role))) {
+    return true;
+  }
+  const isStudent = roles.some((role) => role.toLowerCase() === 'sinhvien');
+  return !isStudent && groups.length > 0;
 }
 
 export function getPortalSubtitle(roles: string[] = getRawUserRoles()): string {

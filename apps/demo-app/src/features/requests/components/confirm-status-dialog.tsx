@@ -55,10 +55,8 @@ export function ConfirmStatusDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isApprove ? 'Phê duyệt yêu cầu' : 'Từ chối yêu cầu'}</DialogTitle>
-          <DialogDescription>
-            {isApprove
-              ? 'Xác nhận phê duyệt và gửi kết quả cho người yêu cầu.'
-              : 'Nhập lý do từ chối để người gửi có thể bổ sung hoặc điều chỉnh.'}
+          <DialogDescription className="sr-only">
+            {isApprove ? 'Phê duyệt yêu cầu' : 'Từ chối yêu cầu'}
           </DialogDescription>
         </DialogHeader>
 

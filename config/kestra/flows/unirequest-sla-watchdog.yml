@@ -1,0 +1,93 @@
+id: unirequest-sla-watchdog
+namespace: unirequest.dxos
+description: >
+  Giám sát SLA tự động (chạy mỗi 15 phút hoặc kích hoạt thủ công): quét các yêu cầu
+  PENDING quá hạn trong PostgreSQL và bắn cảnh báo đỏ về đúng chuông Ban phụ trách.
+
+inputs:
+  - id: testThresholdMinutes
+    type: INT
+    defaults: 0
+    description: >
+      Đặt > 0 để kiểm thử nhanh (ví dụ: 1 phút sẽ bắt mọi yêu cầu PENDING chờ quá 1 phút).
+      Giữ 0 để chạy theo chuẩn thực tế (URGENT > 2h, HIGH > 8h, NORMAL > 24h).
+
+tasks:
+  - id: find_overdue_requests
+    type: io.kestra.plugin.jdbc.postgresql.Query
+    url: "{{ envs.db_url }}"
+    username: "{{ envs.db_user }}"
+    password: "{{ envs.db_password }}"
+    sql: >-
+      SELECT
+        r.id::text AS request_id,
+        r.title,
+        r.created_by,
+        COALESCE(r.target_department, 'Chung') AS target_department,
+        r.priority,
+        ROUND((EXTRACT(EPOCH FROM (NOW() - r.created_at)) / 3600.0)::numeric, 2) AS hours_pending,
+        CASE
+          WHEN r.priority = 'URGENT' THEN 2
+          WHEN r.priority = 'HIGH' THEN 8
+          ELSE 24
+        END AS threshold_hours
+      FROM requests r
+      WHERE r.status = 'PENDING'
+        AND r.hidden_by_receiver = FALSE
+        AND NOT EXISTS (
+          SELECT 1 FROM request_audit_logs l
+          WHERE l.request_id = r.id
+            AND l.action = 'SLA_WARNING'
+            AND l.created_at >= NOW() - INTERVAL '6 hours'
+        )
+        AND (
+          ({{ inputs.testThresholdMinutes }} > 0
+           AND r.created_at <= NOW() - ({{ inputs.testThresholdMinutes }} * INTERVAL '1 minute'))
+          OR
+          ({{ inputs.testThresholdMinutes }} <= 0 AND (
+            (r.priority = 'URGENT' AND r.created_at <= NOW() - INTERVAL '2 hours')
+            OR (r.priority = 'HIGH' AND r.created_at <= NOW() - INTERVAL '8 hours')
+            OR (r.priority = 'NORMAL' AND r.created_at <= NOW() - INTERVAL '24 hours')
+          ))
+        )
+      ORDER BY r.created_at ASC
+      LIMIT 50;
+    fetchType: FETCH
+
+  - id: check_overdue_found
+    type: io.kestra.plugin.core.flow.If
+    condition: "{{ outputs.find_overdue_requests.size > 0 }}"
+    then:
+      - id: log_overdue_count
+        type: io.kestra.plugin.core.log.Log
+        level: WARN
+        message: "[SLA-WATCHDOG] Phát hiện {{ outputs.find_overdue_requests.size }} yêu cầu quá hạn xử lý."
+
+      - id: dispatch_sla_alerts
+        type: io.kestra.plugin.core.flow.Loop
+        values: "{{ outputs.find_overdue_requests.rows }}"
+        tasks:
+          - id: send_sla_callback
+            type: io.kestra.plugin.core.http.Request
+            uri: "{{ envs.backend_url }}/api/internal/kestra/sla-alert"
+            method: POST
+            contentType: application/json
+            headers:
+              x-kestra-key: "{{ envs.webhook_key }}"
+            body: |
+              {
+                "request_id": "{{ fromJson(item.value).request_id }}",
+                "hours_pending": {{ fromJson(item.value).hours_pending }},
+                "threshold_hours": {{ fromJson(item.value).threshold_hours }},
+                "execution_id": "{{ execution.id }}"
+              }
+    else:
+      - id: log_sla_healthy
+        type: io.kestra.plugin.core.log.Log
+        message: "[SLA-OK] Toàn bộ yêu cầu đang nằm trong ngưỡng thời gian xử lý."
+
+triggers:
+  - id: sla_every_15_minutes
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "*/15 * * * *"
+    timezone: Asia/Ho_Chi_Minh

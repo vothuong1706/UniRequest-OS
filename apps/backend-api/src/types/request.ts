@@ -2,12 +2,32 @@ export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type RequestPriority = 'NORMAL' | 'HIGH' | 'URGENT';
 
+export type TargetDepartment = string;
+
+export interface DepartmentGroupItem {
+  id: string;
+  name: string;
+  path: string;
+  display_label: string;
+  parent_path: string | null;
+  depth: number;
+  sub_group_count: number;
+}
+
+export type RequestDeleteMode = 'history' | 'manage';
+
+export type RequestAccessScope =
+  | { type: 'ALL' }
+  | { type: 'DEPARTMENT'; departments: string[] }
+  | { type: 'PERSONAL'; username: string };
+
 export type AuditAction =
   | 'CREATED'
   | 'APPROVED'
   | 'REJECTED'
   | 'PENDING'
-  | 'WORKFLOW_DISPATCHED';
+  | 'WORKFLOW_DISPATCHED'
+  | 'SLA_WARNING';
 
 export interface RequestCategoryEntity {
   id: string;
@@ -46,6 +66,7 @@ export interface RequestEntity {
   description: string | null;
   category: string;
   custom_category_label: string | null;
+  target_department: string | null;
   priority: RequestPriority;
   status: RequestStatus;
   created_by: string;
@@ -54,6 +75,8 @@ export interface RequestEntity {
   review_note: string | null;
   reviewed_at: Date | null;
   workflow_execution_id: string | null;
+  hidden_by_sender?: boolean;
+  hidden_by_receiver?: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -76,6 +99,7 @@ export interface CreateRequestDto {
   description?: string;
   category?: string;
   custom_category_label?: string;
+  target_department?: string;
   priority?: RequestPriority;
   attachment_url?: string;
 }
@@ -86,7 +110,7 @@ export interface UpdateRequestStatusDto {
 }
 
 export interface RequestAnalyticsSummary {
-  scope: 'ALL' | 'PERSONAL';
+  scope: 'ALL' | 'DEPARTMENT' | 'PERSONAL';
   total: number;
   by_status: Record<RequestStatus, number>;
   categories: Array<{
@@ -111,6 +135,7 @@ export interface KeycloakUser {
   preferred_username: string;
   email?: string;
   roles: string[];
+  groups: string[];
   sub?: string;
   realm_access?: {
     roles: string[];

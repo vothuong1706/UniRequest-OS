@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { emitRequestUpdated, emitToStaff, emitToUser } from '../realtime/socket-server.js';
 import { commentService } from '../services/comment-service.js';
+import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { notificationService } from '../services/notification-service.js';
-import { hasElevatedRole, requestService } from '../services/request-service.js';
+import { canViewRequest, requestService } from '../services/request-service.js';
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -32,8 +33,10 @@ export class CommentController {
         return;
       }
 
-      const isStaff = hasElevatedRole(user.roles);
-      if (!isStaff && existing.created_by !== user.preferred_username) {
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      if (!canViewRequest({ ...user, groups: resolvedGroups }, existing)) {
         res.status(403).json({
           success: false,
           message: 'Bạn không có quyền xem trao đổi của yêu cầu này.',
@@ -86,8 +89,10 @@ export class CommentController {
         return;
       }
 
-      const isStaff = hasElevatedRole(user.roles);
-      if (!isStaff && existing.created_by !== user.preferred_username) {
+      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
+        user.groups
+      );
+      if (!canViewRequest({ ...user, groups: resolvedGroups }, existing)) {
         res.status(403).json({
           success: false,
           message: 'Bạn không có quyền trao đổi trong yêu cầu này.',
@@ -102,23 +107,32 @@ export class CommentController {
         content,
       });
 
-      // Emit realtime comment to owner & staff rooms
+      // Emit realtime comment to owner & target department rooms
       emitToUser(existing.created_by, 'comment:new', comment);
-      emitToStaff('comment:new', comment);
-      emitRequestUpdated(existing.id, existing.created_by, 'COMMENT_ADDED');
+      emitToStaff('comment:new', comment, existing.target_department);
+      emitRequestUpdated(
+        existing.id,
+        existing.created_by,
+        'COMMENT_ADDED',
+        existing.target_department
+      );
 
       // Dispatch notification to the opposite party
       const snippet = content.length > 90 ? `${content.slice(0, 90)}…` : content;
       const isAuthorOwner = existing.created_by === user.preferred_username;
+      const deptLabel = existing.target_department
+        ? existing.target_department.split('/').join(' / ')
+        : 'Chung';
 
       if (isAuthorOwner) {
         void notificationService
           .createAndDispatch({
             recipientRole: 'staff',
+            recipientDepartment: existing.target_department,
             requestId: existing.id,
             type: 'COMMENT_ADDED',
             severity: 'INFO',
-            title: `Trao đổi mới: ${existing.title}`,
+            title: `[${deptLabel}] Trao đổi mới: ${existing.title}`,
             message: `${user.preferred_username}: "${snippet}"`,
             actor: user.preferred_username,
           })
@@ -127,10 +141,11 @@ export class CommentController {
         void notificationService
           .createAndDispatch({
             recipientUsername: existing.created_by,
+            recipientDepartment: existing.target_department,
             requestId: existing.id,
             type: 'COMMENT_ADDED',
             severity: 'INFO',
-            title: `Phản hồi mới cho yêu cầu của bạn`,
+            title: `[${deptLabel}] Phản hồi mới cho yêu cầu của bạn`,
             message: `${user.preferred_username}: "${snippet}"`,
             actor: user.preferred_username,
           })

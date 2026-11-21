@@ -41,3 +41,11 @@ requestRouter.post('/:id/comments', (req, res, next) =>
 requestRouter.put('/:id/status', requireStaffOrLecturer, (req, res, next) =>
   requestController.updateStatus(req, res, next)
 );
+
+// DELETE /api/requests & DELETE /api/requests/:id - Xóa một hoặc nhiều yêu cầu
+requestRouter.delete('/', (req, res, next) =>
+  requestController.deleteRequests(req, res, next)
+);
+requestRouter.delete('/:id', (req, res, next) =>
+  requestController.deleteRequests(req, res, next)
+);

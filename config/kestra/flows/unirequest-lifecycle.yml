@@ -1,8 +1,9 @@
 id: unirequest-lifecycle
 namespace: unirequest.dxos
 description: >
-  DX-OS Open-Core Workflow Engine (Kestra Apache-2.0) - Điều phối vòng đời yêu cầu
-  Đại học theo chuẩn GitOps YAML: phân tuyến phòng ban, cảnh báo SLA và ghi nhận kiểm toán.
+  DX-OS Workflow Engine (Kestra Apache-2.0) - Điều phối vòng đời yêu cầu
+  theo thời gian thực: phân tuyến động theo phòng ban (target_department),
+  phân loại SLA và đối soát hàng đợi PostgreSQL.
 
 tasks:
   - id: log_incoming_event
@@ -10,7 +11,8 @@ tasks:
     message: >-
       [DX-OS Workflow] event={{ trigger.body.event ?? 'unknown' }} |
       request_id={{ trigger.body.request_id ?? 'N/A' }} |
-      category={{ trigger.body.category ?? 'ACADEMIC' }} |
+      department={{ trigger.body.target_department ?? 'Chung' }} |
+      category={{ trigger.body.category ?? 'OTHER' }} |
       priority={{ trigger.body.priority ?? 'NORMAL' }} |
       status={{ trigger.body.status ?? 'PENDING' }} |
       actor={{ trigger.body.actor ?? trigger.body.created_by ?? 'N/A' }}
@@ -20,28 +22,12 @@ tasks:
     value: "{{ trigger.body.event ?? 'request.created' }}"
     cases:
       request.created:
-        - id: route_department_by_category
-          type: io.kestra.plugin.core.flow.Switch
-          value: "{{ trigger.body.category ?? 'ACADEMIC' }}"
-          cases:
-            FACILITY:
-              - id: dept_facility
-                type: io.kestra.plugin.core.log.Log
-                message: >-
-                  [DEPT-ROUTING] Chuyển yêu cầu #{{ trigger.body.request_id }} tới
-                  Phòng Quản trị Cơ sở vật chất ({{ trigger.body.title }})
-            CERTIFICATE:
-              - id: dept_student_affairs
-                type: io.kestra.plugin.core.log.Log
-                message: >-
-                  [DEPT-ROUTING] Chuyển yêu cầu #{{ trigger.body.request_id }} tới
-                  Phòng Công tác Sinh viên ({{ trigger.body.title }})
-          defaults:
-            - id: dept_academic
-              type: io.kestra.plugin.core.log.Log
-              message: >-
-                [DEPT-ROUTING] Chuyển yêu cầu #{{ trigger.body.request_id }} tới
-                Phòng Đào tạo & Học vụ ({{ trigger.body.title }})
+        - id: route_to_department
+          type: io.kestra.plugin.core.log.Log
+          message: >-
+            [DEPT-ROUTING] Định tuyến yêu cầu #{{ trigger.body.request_id ?? 'N/A' }}
+            ({{ trigger.body.title ?? 'Không tiêu đề' }}) tới Ban / Nhóm:
+            [{{ trigger.body.target_department ?? 'Chung' }}]
 
         - id: classify_sla_priority
           type: io.kestra.plugin.core.flow.Switch
@@ -53,27 +39,39 @@ tasks:
                 level: WARN
                 message: >-
                   [SLA-URGENT] Kích hoạt cảnh báo khẩn cấp (< 2 giờ) cho yêu cầu
-                  #{{ trigger.body.request_id }} từ {{ trigger.body.created_by }}
+                  #{{ trigger.body.request_id ?? 'N/A' }} tại [{{ trigger.body.target_department ?? 'Chung' }}]
             HIGH:
               - id: sla_high_route
                 type: io.kestra.plugin.core.log.Log
                 message: >-
-                  [SLA-HIGH] Chuyển hàng đợi ưu tiên trong ngày (< 8 giờ) cho yêu cầu
-                  #{{ trigger.body.request_id }}
+                  [SLA-HIGH] Chuyển hàng đợi ưu tiên (< 8 giờ) cho yêu cầu
+                  #{{ trigger.body.request_id ?? 'N/A' }} tại [{{ trigger.body.target_department ?? 'Chung' }}]
           defaults:
             - id: sla_normal_route
               type: io.kestra.plugin.core.log.Log
               message: >-
-                [SLA-STANDARD] Tiếp nhận yêu cầu tiêu chuẩn #{{ trigger.body.request_id }}
-                (SLA <= 24 giờ)
+                [SLA-STANDARD] Tiếp nhận yêu cầu tiêu chuẩn #{{ trigger.body.request_id ?? 'N/A' }}
+                (SLA <= 24 giờ) tại [{{ trigger.body.target_department ?? 'Chung' }}]
+
+        - id: inspect_active_queue
+          type: io.kestra.plugin.jdbc.postgresql.Query
+          url: "{{ envs.db_url }}"
+          username: "{{ envs.db_user }}"
+          password: "{{ envs.db_password }}"
+          sql: >-
+            SELECT
+              COUNT(*) FILTER (WHERE status = 'PENDING' AND hidden_by_receiver = FALSE)::int AS pending_total,
+              COUNT(*) FILTER (WHERE priority = 'URGENT' AND status = 'PENDING' AND hidden_by_receiver = FALSE)::int AS urgent_pending
+            FROM requests;
+          fetchType: FETCH_ONE
 
       request.status_changed:
         - id: notify_decision
           type: io.kestra.plugin.core.log.Log
           message: >-
-            [WORKFLOW-DECISION] Yêu cầu #{{ trigger.body.request_id }} ({{ trigger.body.title }})
-            đã chuyển sang [{{ trigger.body.status }}] bởi {{ trigger.body.actor ?? 'staff' }}
-            | Ghi chú: {{ trigger.body.review_note ?? 'Không có' }}
+            [WORKFLOW-DECISION] Yêu cầu #{{ trigger.body.request_id ?? 'N/A' }} ({{ trigger.body.title ?? '' }})
+            tại [{{ trigger.body.target_department ?? 'Chung' }}] đã chuyển sang [{{ trigger.body.status }}]
+            bởi {{ trigger.body.actor ?? 'staff' }} | Ghi chú: {{ trigger.body.review_note ?? 'Không có' }}
 
     defaults:
       - id: generic_audit_log

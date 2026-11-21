@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
   Eye,
@@ -8,6 +8,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Trash2,
   X,
 } from 'lucide-react';
 import type { PageId } from '@/components/layout/nav-config';
@@ -31,18 +32,25 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDateTime } from '@/lib/format';
 import type {
+  DepartmentGroupItem,
   RequestCategoryItem,
   RequestItem,
   RequestStatus,
   StatusFilter,
 } from '../types';
 import { resolveRequestDisplay } from '../utils/priority';
-import { CategoryBadge, PriorityBadge, StatusBadge } from './status-badge';
+import {
+  CategoryBadge,
+  DepartmentBadge,
+  PriorityBadge,
+  StatusBadge,
+} from './status-badge';
 
 interface RequestListViewProps {
   mode: 'history' | 'manage';
   requests: RequestItem[];
   categories: RequestCategoryItem[];
+  departments: DepartmentGroupItem[];
   loading: boolean;
   isStaff: boolean;
   currentUsername: string;
@@ -51,6 +59,7 @@ interface RequestListViewProps {
   onRefresh: () => void;
   onInspectRequest: (request: RequestItem) => void;
   onRequestStatusChange: (request: RequestItem, nextStatus: RequestStatus) => void;
+  onDeleteRequests: (ids: string[]) => Promise<void>;
   onNavigate: (page: PageId) => void;
 }
 
@@ -58,6 +67,7 @@ export function RequestListView({
   mode,
   requests,
   categories,
+  departments,
   loading,
   isStaff,
   currentUsername,
@@ -66,17 +76,25 @@ export function RequestListView({
   onRefresh,
   onInspectRequest,
   onRequestStatusChange,
+  onDeleteRequests,
   onNavigate,
 }: RequestListViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
 
   const isManageMode = mode === 'manage' && isStaff;
 
   const scopedRequests = useMemo(() => {
-    if (isManageMode || !isStaff || !currentUsername) {
-      return requests;
+    if (isManageMode) {
+      return requests.filter((item) => !item.hidden_by_receiver);
     }
-    return requests.filter((item) => item.created_by === currentUsername);
+    return requests.filter(
+      (item) =>
+        !item.hidden_by_sender &&
+        (!isStaff || !currentUsername || item.created_by === currentUsername)
+    );
   }, [requests, isManageMode, isStaff, currentUsername]);
 
   const counts = useMemo(
@@ -94,33 +112,91 @@ export function RequestListView({
     return scopedRequests.filter((req) => {
       if (statusFilter !== 'ALL' && req.status !== statusFilter) return false;
       if (!keyword) return true;
-      const { categoryLabel, cleanDescription } = resolveRequestDisplay(req, categories);
+      const { categoryLabel, targetDepartmentLabel, cleanDescription } =
+        resolveRequestDisplay(req, categories, departments);
       return (
         req.title.toLowerCase().includes(keyword) ||
         categoryLabel.toLowerCase().includes(keyword) ||
+        (targetDepartmentLabel?.toLowerCase().includes(keyword) ?? false) ||
         cleanDescription.toLowerCase().includes(keyword) ||
         req.created_by.toLowerCase().includes(keyword) ||
         (req.review_note?.toLowerCase().includes(keyword) ?? false)
       );
     });
-  }, [scopedRequests, categories, statusFilter, searchQuery]);
+  }, [scopedRequests, categories, departments, statusFilter, searchQuery]);
+
+  const visibleSelectedIds = useMemo(() => {
+    const visibleSet = new Set(filteredRequests.map((r) => r.id));
+    return selectedIds.filter((id) => visibleSet.has(id));
+  }, [filteredRequests, selectedIds]);
+
+  const visibleSelectedSet = useMemo(
+    () => new Set(visibleSelectedIds),
+    [visibleSelectedIds]
+  );
+
+  const allVisibleSelected =
+    filteredRequests.length > 0 && visibleSelectedIds.length === filteredRequests.length;
+  const someVisibleSelected =
+    visibleSelectedIds.length > 0 && visibleSelectedIds.length < filteredRequests.length;
+
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someVisibleSelected;
+    }
+  }, [someVisibleSelected]);
+
+  const toggleSelectAll = () => {
+    if (allVisibleSelected) {
+      const visibleSet = new Set(filteredRequests.map((r) => r.id));
+      setSelectedIds((prev) => prev.filter((id) => !visibleSet.has(id)));
+    } else {
+      setSelectedIds((prev) =>
+        Array.from(new Set([...prev, ...filteredRequests.map((r) => r.id)]))
+      );
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleDeleteIds = async (ids: string[]) => {
+    if (ids.length === 0 || deleting) return;
+    setDeleting(true);
+    try {
+      await onDeleteRequests(ids);
+      const removed = new Set(ids);
+      setSelectedIds((prev) => prev.filter((id) => !removed.has(id)));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {isManageMode ? 'Quản lý & Phê duyệt' : 'Yêu cầu của tôi'}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {isManageMode
-              ? 'Xem xét và phê duyệt các yêu cầu gửi tới nhà trường.'
-              : 'Theo dõi trạng thái và phản hồi cho các yêu cầu của bạn.'}
-          </p>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {isManageMode ? 'Quản lý & Phê duyệt' : 'Yêu cầu của tôi'}
+        </h1>
 
         <div className="flex items-center gap-2">
+          {visibleSelectedIds.length > 0 && (
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              disabled={deleting}
+              onClick={() => void handleDeleteIds(visibleSelectedIds)}
+              aria-label="Xóa các yêu cầu đã chọn"
+              title="Xóa"
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
           <Button
             type="button"
             variant="outline"
@@ -201,11 +277,6 @@ export function RequestListView({
                 ? 'Chưa có yêu cầu nào'
                 : 'Không có kết quả phù hợp'}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
-              {scopedRequests.length === 0
-                ? 'Tạo yêu cầu mới hoặc bấm Làm mới để đồng bộ dữ liệu.'
-                : 'Thử xóa bộ lọc hoặc nhập từ khóa khác.'}
-            </p>
             {(searchQuery || statusFilter !== 'ALL') && (
               <Button
                 type="button"
@@ -225,6 +296,16 @@ export function RequestListView({
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead className="w-10 pr-0">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAll}
+                    aria-label="Chọn tất cả"
+                    className="accent-primary size-4 cursor-pointer rounded align-middle"
+                  />
+                </TableHead>
                 {isManageMode && <TableHead>Người gửi</TableHead>}
                 <TableHead>Tiêu đề</TableHead>
                 <TableHead>Danh mục</TableHead>
@@ -236,11 +317,24 @@ export function RequestListView({
             </TableHeader>
             <TableBody>
               {filteredRequests.map((req) => {
-                const { categoryLabel, priority, cleanDescription } =
-                  resolveRequestDisplay(req, categories);
+                const {
+                  categoryLabel,
+                  targetDepartmentLabel,
+                  priority,
+                  cleanDescription,
+                } = resolveRequestDisplay(req, categories, departments);
 
                 return (
                   <TableRow key={req.id}>
+                    <TableCell className="w-10 pr-0">
+                      <input
+                        type="checkbox"
+                        checked={visibleSelectedSet.has(req.id)}
+                        onChange={() => toggleSelectOne(req.id)}
+                        aria-label={`Chọn ${req.title}`}
+                        className="accent-primary size-4 cursor-pointer rounded align-middle"
+                      />
+                    </TableCell>
                     {isManageMode && (
                       <TableCell className="whitespace-nowrap text-xs font-medium">
                         {req.created_by}
@@ -268,8 +362,11 @@ export function RequestListView({
                     </TableCell>
 
                     <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <CategoryBadge label={categoryLabel} />
+                        {targetDepartmentLabel && (
+                          <DepartmentBadge label={targetDepartmentLabel} />
+                        )}
                         {priority !== 'NORMAL' && <PriorityBadge priority={priority} />}
                       </div>
                     </TableCell>
@@ -321,6 +418,19 @@ export function RequestListView({
                             </Button>
                           </>
                         )}
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          disabled={deleting}
+                          onClick={() => void handleDeleteIds([req.id])}
+                          className="text-muted-foreground hover:text-destructive size-8"
+                          aria-label={`Xóa ${req.title}`}
+                          title="Xóa"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
 
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

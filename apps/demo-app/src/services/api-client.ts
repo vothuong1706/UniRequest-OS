@@ -2,10 +2,12 @@ import { ensureFreshToken } from '@/auth/keycloak';
 import type {
   CreateCategoryPayload,
   CreateRequestPayload,
+  DepartmentGroupItem,
   NotificationListResponse,
   RequestAnalytics,
   RequestCategoryItem,
   RequestCommentItem,
+  RequestDeleteMode,
   RequestDetailItem,
   RequestItem,
   RequestStatus,
@@ -76,6 +78,7 @@ export const requestsApi = {
         description: body.description || undefined,
         category: body.category,
         custom_category_label: body.custom_category_label?.trim() || undefined,
+        target_department: body.target_department,
         priority: body.priority,
         attachment_url: body.attachment_url || undefined,
       }),
@@ -88,6 +91,12 @@ export const requestsApi = {
         status,
         review_note: reviewNote?.trim() || undefined,
       }),
+    }),
+
+  deleteMany: (ids: string[], mode?: RequestDeleteMode) =>
+    fetchWithAuth<string[]>('/requests', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids, mode }),
     }),
 };
 
@@ -113,6 +122,19 @@ export const categoriesApi = {
     fetchWithAuth<RequestCategoryItem>(`/categories/${id}/toggle`, {
       method: 'PATCH',
     }),
+
+  deleteMany: (ids: string[]) =>
+    fetchWithAuth<string[]>('/categories', {
+      method: 'DELETE',
+      body: JSON.stringify({ ids }),
+    }),
+};
+
+export const departmentsApi = {
+  list: (refresh = false) =>
+    fetchWithAuth<DepartmentGroupItem[]>(
+      refresh ? '/departments?refresh=true' : '/departments'
+    ),
 };
 
 export const uploadApi = {
