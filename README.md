@@ -151,43 +151,43 @@ Hệ thống tuân thủ nguyên lý **phân tách 2 tầng Open-Core**:
 ```mermaid
 sequenceDiagram
     autonumber
-    actor SV as Sinh viên (sinhvien)
-    participant FE as Boundary: UniRequest Portal (:3000)
-    participant KONG as Boundary: Kong Gateway (:8000)
-    participant CTRL as Control: RequestController
-    participant SVC as Control: Request &amp; Noti Service
-    participant EXT as Boundary: MinIO / Kestra (:8085)
-    database PG as Entity: PostgreSQL 16
+    actor SV as Sinh vien (sinhvien)
+    participant FE as Boundary - UniRequest Portal
+    participant KONG as Boundary - Kong Gateway
+    participant CTRL as Control - RequestController
+    participant SVC as Control - Request and Noti Service
+    participant EXT as Boundary - MinIO / Kestra
+    participant PG as Entity - PostgreSQL 16
 
-    SV->>+FE: 1. Chọn Phòng ban (/api/departments), Danh mục & nội dung
-    opt Có tệp đính kèm (<= 20MB)
-        FE->>+KONG: 2. POST /api/upload (Bearer JWT + file)
-        KONG->>+EXT: 3. putObject(RAM Buffer -> unirequest-files)
-        EXT-->>-FE: 4. 200 OK + attachment_url
-        deactivate KONG
+    SV->>+FE: Chon Phong ban, Danh muc va noi dung
+    opt Co tep dinh kem
+        FE->>+KONG: POST /api/upload (Bearer JWT + file)
+        KONG->>+EXT: putObject (RAM Buffer -> unirequest-files)
+        EXT-->>-KONG: 200 OK + attachment_url
+        KONG-->>-FE: 200 OK + attachment_url
     end
 
-    FE->>+KONG: 5. POST /api/requests (target_department, category, priority)
-    KONG->>+CTRL: 6. Verify Rate-Limit + X-Correlation-ID + Forward JWT
-    CTRL->>CTRL: 7. verifyKeycloakJwt() & validateGroup + Poka-yoke
-    CTRL->>+SVC: 8. createRequest(dto, createdBy, roles)
-    SVC->>+PG: 9. INSERT requests + request_audit_logs (CREATED)
-    PG-->>-SVC: 10. Trả về RequestEntity (UUID)
+    FE->>+KONG: POST /api/requests (target_department, category, priority)
+    KONG->>+CTRL: Verify Rate-Limit + X-Correlation-ID + JWT
+    CTRL->>CTRL: verifyKeycloakJwt() va validateGroup
+    CTRL->>+SVC: createRequest(dto, createdBy, roles)
+    SVC->>+PG: INSERT requests + request_audit_logs (CREATED)
+    PG-->>-SVC: RequestEntity (UUID)
 
-    alt Kết nối Kestra Engine (:8085) ổn định
-        SVC->>+EXT: 11. POST Webhook unirequest-lifecycle (Basic Auth)
-        EXT-->>-SVC: 12. 200 OK + executionId (phân tuyến Ban + SLA)
-    else Kestra timeout / khởi động (Fallback OLTP)
-        SVC->>SVC: 13. Log warning, bảo toàn bản ghi PENDING trong PostgreSQL
+    alt Ket noi Kestra Engine on dinh
+        SVC->>+EXT: POST Webhook unirequest-lifecycle
+        EXT-->>-SVC: 200 OK + executionId
+    else Kestra timeout / khoi dong (Fallback OLTP)
+        SVC->>SVC: Log warning, bao toan PENDING trong DB
     end
 
-    SVC->>+PG: 14. INSERT notifications (recipient_department = Ban tiếp nhận)
-    PG-->>-SVC: 15. OK
-    SVC-->>FE: 16. Emit Socket.IO dept:<group> + Web Push VAPID
+    SVC->>+PG: INSERT notifications (recipient_department)
+    PG-->>-SVC: OK
+    SVC-->>FE: Emit Socket.IO dept + Web Push VAPID
     deactivate SVC
-    CTRL-->>-FE: 17. 201 Created + RequestEntity
-    deactivate KONG
-    FE-->>-SV: 18. Cập nhật Lịch sử &amp; hiển thị PENDING
+    CTRL-->>-KONG: 201 Created
+    KONG-->>-FE: 201 Created + RequestEntity
+    FE-->>-SV: Cap nhat Lich su (PENDING)
 ```
 
 </details>

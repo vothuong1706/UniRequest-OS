@@ -5,26 +5,21 @@ import { config } from './environment.js';
 
 const { Pool } = pg;
 
+const SAFE_TZ_REGEX = /^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)*$/;
+const sessionTimeZone = SAFE_TZ_REGEX.test(config.timezone)
+  ? config.timezone
+  : 'Asia/Ho_Chi_Minh';
+
 export const pool = new Pool({
   host: config.database.host,
   port: config.database.port,
   user: config.database.user,
   password: config.database.password,
   database: config.database.name,
+  options: `-c timezone=${sessionTimeZone}`,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-});
-
-const SAFE_TZ_REGEX = /^[A-Za-z_]+(?:\/[A-Za-z0-9_+-]+)*$/;
-const sessionTimeZone = SAFE_TZ_REGEX.test(config.timezone)
-  ? config.timezone
-  : 'Asia/Ho_Chi_Minh';
-
-pool.on('connect', (client) => {
-  void client.query(`SET TIME ZONE '${sessionTimeZone}'`).catch((err: Error) => {
-    console.warn('[Database] Không thể thiết lập TIME ZONE phiên làm việc:', err.message);
-  });
 });
 
 pool.on('error', (err) => {
