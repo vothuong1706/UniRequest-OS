@@ -1,4 +1,5 @@
 import Keycloak from 'keycloak-js';
+import { resolveServiceUrl } from '@/lib/runtime-urls';
 
 export interface KeycloakProfile {
   sub?: string;
@@ -10,7 +11,11 @@ export interface KeycloakProfile {
 }
 
 const keycloak = new Keycloak({
-  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8000/auth',
+  url: resolveServiceUrl(
+    import.meta.env.VITE_KEYCLOAK_URL,
+    '/auth',
+    'http://localhost:8000/auth'
+  ),
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'unirequest',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'unirequest-portal',
 });

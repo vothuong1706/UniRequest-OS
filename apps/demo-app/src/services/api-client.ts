@@ -1,5 +1,7 @@
 import { ensureFreshToken } from '@/auth/keycloak';
+import { resolveServiceUrl } from '@/lib/runtime-urls';
 import type {
+  AiTriageSuggestion,
   CreateCategoryPayload,
   CreateRequestPayload,
   DepartmentGroupItem,
@@ -15,8 +17,11 @@ import type {
   UploadedFileResponse,
 } from '@/features/requests/types';
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+export const API_BASE_URL = resolveServiceUrl(
+  import.meta.env.VITE_API_BASE_URL,
+  '/api',
+  'http://localhost:8000/api'
+);
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -69,6 +74,12 @@ export const requestsApi = {
     fetchWithAuth<RequestDetailItem>(`/requests/${requestId}`),
 
   analytics: () => fetchWithAuth<RequestAnalytics>('/requests/analytics'),
+
+  suggestAi: (payload: { title: string; description?: string }) =>
+    fetchWithAuth<AiTriageSuggestion>('/requests/ai-suggest', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 
   create: (body: CreateRequestPayload) =>
     fetchWithAuth<RequestItem>('/requests', {

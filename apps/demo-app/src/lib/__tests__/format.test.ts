@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   formatDateTime,
   getDateKeyInAppTimezone,
   isSameDayInAppTimezone,
+  resolveAttachmentUrl,
 } from '../format';
+import { resolveServiceUrl } from '../runtime-urls';
 
 describe('Vietnam / Bangkok (+07:00) Timezone Formatting', () => {
   it('hiển thị đúng giờ Việt Nam / Bangkok (+07:00) từ mốc ISO UTC', () => {
@@ -22,5 +24,53 @@ describe('Vietnam / Bangkok (+07:00) Timezone Formatting', () => {
     const ref = new Date('2026-11-21T02:00:00.000Z'); // 09:00 ngày 21/11 (+07:00)
     expect(isSameDayInAppTimezone('2026-11-20T17:15:00.000Z', ref)).toBe(true);
     expect(isSameDayInAppTimezone('2026-11-20T16:45:00.000Z', ref)).toBe(false);
+  });
+});
+
+describe('Same-Origin & Internet Attachment URL Resolution', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('giữ localhost:8000 khi chạy local và tự động chuyển Same-Origin khi chạy qua domain HTTPS', () => {
+    vi.stubGlobal('window', {
+      location: { hostname: 'localhost', origin: 'http://localhost:3000' },
+    });
+    expect(resolveServiceUrl('auto', '/api', 'http://localhost:8000/api')).toBe(
+      'http://localhost:8000/api'
+    );
+
+    vi.stubGlobal('window', {
+      location: {
+        hostname: 'unirequest.example.vn',
+        origin: 'https://unirequest.example.vn',
+      },
+    });
+    expect(resolveServiceUrl('auto', '/api', 'http://localhost:8000/api')).toBe(
+      'https://unirequest.example.vn/api'
+    );
+    expect(
+      resolveServiceUrl(
+        'http://localhost:8000/auth',
+        '/auth',
+        'http://localhost:8000/auth'
+      )
+    ).toBe('https://unirequest.example.vn/auth');
+  });
+
+  it('chuẩn hóa đường dẫn tệp MinIO cũ và đường dẫn tương đối sang proxy /api/upload/files', () => {
+    expect(
+      resolveAttachmentUrl(
+        '/api/upload/files/123_abc_minhchung.png',
+        'https://unirequest.example.vn/api'
+      )
+    ).toBe('https://unirequest.example.vn/api/upload/files/123_abc_minhchung.png');
+
+    expect(
+      resolveAttachmentUrl(
+        'http://localhost:9000/unirequest-files/123_abc_minhchung.png',
+        'https://unirequest.example.vn/api'
+      )
+    ).toBe('https://unirequest.example.vn/api/upload/files/123_abc_minhchung.png');
   });
 });

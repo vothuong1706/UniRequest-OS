@@ -1,0 +1,50 @@
+UniRequest-OS
+Copyright 2026 UniRequest-OS Contributors
+
+Sản phẩm này được phát hành theo giấy phép Apache License, Version 2.0
+(xem toàn văn tại tệp LICENSE).
+
+================================================================================
+1. Thành phần Phần mềm Nguồn mở bên thứ ba (Tầng 1 & Thư viện)
+================================================================================
+UniRequest-OS điều phối các thành phần phần mềm nguồn mở thông qua Docker image
+chính thức hoặc thư viện chuẩn OSI dưới đây (không sửa đổi mã nguồn thượng nguồn):
+
+- Keycloak 26.0 (Apache License 2.0) - https://www.keycloak.org/
+- Kong Gateway OSS 3.7.1 (Apache License 2.0) - https://konghq.com/
+- Kestra Open-Source (Apache License 2.0) - https://kestra.io/
+- Caddy Web Server (Apache License 2.0) - https://caddyserver.com/
+- PostgreSQL 16 (PostgreSQL License) - https://www.postgresql.org/
+- MinIO / pgsty/silo S3 Object Storage (AGPL-3.0 / Apache-2.0, chạy dịch vụ Docker tách biệt qua mạng HTTP/S3)
+- Nginx Alpine (BSD-2-Clause License) - https://nginx.org/
+- Node.js, Express, Socket.IO, React 19, Vite, Tailwind CSS, Shadcn/UI, Lucide Icons, Vitest (MIT / ISC)
+- Bộ kỹ năng tham khảo phát triển trong .agents/skills/ từ dự án agency-agents (MIT License)
+
+================================================================================
+2. Tham khảo Kiến trúc & Tài liệu từ Cộng đồng Nguồn mở
+================================================================================
+Trong quá trình nghiên cứu khung kiến trúc DX-OS Open-Core cho cuộc thi OLP PMNM 2026,
+nhóm có tham khảo cách tiếp cận kiến trúc và trình bày tài liệu từ các dự án tiền nhiệm:
+
+- Signet (HIT-Champion): Tham khảo phương pháp phân tách 3 tầng DX-OS, bố cục sơ đồ
+  kiến trúc động theo 4 không gian H-P-D-I và phong cách đặc tả kỹ thuật.
+- Disaster DX-OS (DTU_DZ_1): Tham khảo chuẩn mực trình bày README nguồn mở, bảng ánh xạ
+  tính năng, cấu trúc minh bạch nguồn gốc tài nguyên hình ảnh và công cụ AI.
+
+Toàn bộ mã nguồn ứng dụng, luồng nghiệp vụ đại học, cơ chế định tuyến Group động,
+xóa độc lập 2 phía, kiểm dịch tệp Magic Bytes, sổ cái SHA-256 và bộ 3 workflow Kestra
+của UniRequest-OS đều do nhóm tự thiết kế, lập trình và kiểm thử cho bài toán dịch vụ đại học.
+
+================================================================================
+3. Công khai Tài nguyên Hình ảnh & Công cụ AI hỗ trợ
+================================================================================
+- Các ảnh minh họa docs/images/logo-3d.png, docs/images/banner.jpg và
+  docs/images/hpdi-overview.jpg được tạo bằng công cụ AI tạo ảnh, phát hành cùng
+  giấy phép Apache-2.0 của kho mã nguồn.
+- Các sơ đồ kiến trúc, quy trình và UML (docs/images/*.svg, architecture.png) do nhóm
+  thiết kế với sự hỗ trợ của công cụ AI dựa trên kiến trúc thực tế của hệ thống.
+- Các ảnh chụp màn hình trong docs/images/screenshots/ (và BAOCAO/images/) là ảnh chụp
+  trực tiếp từ hệ thống UniRequest-OS vận hành thực tế.
+- Các trợ lý AI lập trình và kiểm thử được nhóm sử dụng để tăng tốc viết mã mẫu, rà lỗi
+  và hoàn thiện tài liệu; mọi đoạn mã, cấu hình và kết quả kiểm thử đều do nhóm trực tiếp
+  rà soát, chạy xác minh (make unit-test, make lint, make test) và chịu trách nhiệm.

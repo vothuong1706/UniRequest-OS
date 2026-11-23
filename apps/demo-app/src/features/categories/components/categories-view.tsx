@@ -494,7 +494,7 @@ export function CategoriesView({
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, department: e.target.value }))
                   }
-                  className="border-input bg-background text-foreground focus:border-red-500 focus:ring-red-500/35 focus:ring-[3px] focus-visible:border-red-500 focus-visible:ring-red-500/35 focus-visible:ring-[3px] flex h-10 w-full rounded-md border px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  className="border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/35 flex h-10 w-full rounded-md border px-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {allowedDepartments.length > 1 && (
                     <option value="" disabled>

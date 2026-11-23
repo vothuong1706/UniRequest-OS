@@ -25,15 +25,15 @@ until curl -sf "$KONG_ADMIN_URL/status" >/dev/null 2>&1; do
   sleep 2
 done
 
-# 1. Service & Route cho Keycloak SSO (/auth -> http://keycloak:8080, strip_path=true)
+# 1. Service & Route cho Keycloak SSO (/auth -> http://keycloak:8080/auth, strip_path=false)
 echo "[1/5] Upsert Service: keycloak-service -> http://keycloak:8080"
 curl -sf -X PUT "$KONG_ADMIN_URL/services/keycloak-service" \
   --data "url=http://keycloak:8080" >/dev/null
 
-echo "[2/5] Upsert Route: keycloak-route (/auth, strip_path=true)"
+echo "[2/5] Upsert Route: keycloak-route (/auth, strip_path=false)"
 curl -sf -X PUT "$KONG_ADMIN_URL/services/keycloak-service/routes/keycloak-route" \
   --data "paths[]=/auth" \
-  --data "strip_path=true" >/dev/null
+  --data "strip_path=false" >/dev/null
 
 # 2. Service & Route cho Backend API (/api -> http://backend:4000, strip_path=false)
 echo "[3/5] Upsert Service: unirequest-backend -> http://backend:4000"

@@ -91,7 +91,16 @@ export interface RequestAuditLogEntity {
   to_status: RequestStatus | null;
   note: string | null;
   metadata: Record<string, unknown>;
+  prev_hash?: string | null;
+  entry_hash?: string | null;
   created_at: Date;
+}
+
+export interface AuditIntegrityResult {
+  valid: boolean;
+  checked_entries: number;
+  latest_hash: string | null;
+  reason?: string;
 }
 
 export interface CreateRequestDto {
@@ -142,4 +151,21 @@ export interface KeycloakUser {
   };
   resource_access?: Record<string, { roles: string[] }>;
   [key: string]: unknown;
+}
+
+export type AiTriageProvider = 'ollama' | 'rule-nlp-engine';
+
+export interface AiTriageSuggestion {
+  suggested_department: string | null;
+  suggested_department_label: string | null;
+  suggested_category_code: string;
+  suggested_category_name: string;
+  suggested_priority: RequestPriority;
+  confidence: number;
+  summary: string;
+  reason: string;
+  keywords_matched: string[];
+  provider: AiTriageProvider;
+  model?: string;
+  latency_ms: number;
 }

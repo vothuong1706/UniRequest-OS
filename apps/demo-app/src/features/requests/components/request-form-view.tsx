@@ -8,8 +8,10 @@ import {
   RotateCcw,
   Search,
   Send,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { requestsApi, uploadApi } from '@/services/api-client';
 import type {
+  AiTriageSuggestion,
   DepartmentGroupItem,
   RequestCategoryItem,
   RequestPriority,
@@ -72,6 +75,8 @@ export function RequestFormView({
   const [descError, setDescError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<AiTriageSuggestion | null>(null);
 
   const comboboxRef = useRef<HTMLDivElement>(null);
   const departmentRef = useRef<HTMLSelectElement>(null);
@@ -142,6 +147,63 @@ export function RequestFormView({
     setTitleError('');
     setDescError('');
     setStatusMessage('');
+    setAiSuggestion(null);
+  };
+
+  const handleAiSuggest = async () => {
+    if (`${trimmedTitle} ${trimmedDesc}`.trim().length < 3) {
+      toast.info(
+        'Vui lòng nhập tiêu đề hoặc nội dung tối thiểu 3 ký tự để AI phân tích.'
+      );
+      titleRef.current?.focus();
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const res = await requestsApi.suggestAi({
+        title: trimmedTitle || trimmedDesc.slice(0, 100),
+        description: trimmedDesc || undefined,
+      });
+
+      if (!res.success || !res.data) {
+        throw new Error(res.message || 'Không nhận được gợi ý từ hệ thống AI.');
+      }
+
+      const suggestion = res.data;
+      setAiSuggestion(suggestion);
+
+      if (suggestion.suggested_department) {
+        const matchedDept = departments.find(
+          (d) =>
+            d.path === suggestion.suggested_department ||
+            d.name === suggestion.suggested_department
+        );
+        if (matchedDept) {
+          setTargetDepartment(matchedDept.path);
+          setDepartmentError('');
+        }
+      }
+
+      const matchedCategory = categories.find(
+        (c) =>
+          c.is_active &&
+          c.code.toUpperCase() === suggestion.suggested_category_code.toUpperCase()
+      );
+      setCategoryCode(matchedCategory ? matchedCategory.code : '');
+      setPriority(suggestion.suggested_priority);
+      setDescError('');
+
+      toast.success(
+        `AI [I] đã đề xuất: ${suggestion.suggested_department_label ?? 'Phòng ban phù hợp'} (${suggestion.suggested_category_name}).`
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Không thể phân tích gợi ý AI lúc này.'
+      );
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -224,6 +286,56 @@ export function RequestFormView({
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            {/* Không gian [I] Intelligence: Trợ lý phân tuyến AI Hybrid */}
+            <div className="bg-muted/50 space-y-2.5 rounded-lg border p-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="text-foreground size-4 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold">Trợ lý phân tuyến AI</p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={submitting || aiLoading}
+                  onClick={() => void handleAiSuggest()}
+                >
+                  {aiLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  <span>{aiLoading ? 'Đang phân tích...' : 'Gợi ý phân tuyến AI'}</span>
+                </Button>
+              </div>
+
+              {aiSuggestion && (
+                <div className="bg-background space-y-1.5 rounded-md border p-3 text-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge variant="secondary" className="text-[11px]">
+                        {aiSuggestion.provider === 'ollama'
+                          ? `Ollama (${aiSuggestion.model ?? 'LLM'})`
+                          : 'Local NLP Engine'}
+                      </Badge>
+                      <Badge variant="outline" className="text-[11px] tabular-nums">
+                        Độ tin cậy {Math.round(aiSuggestion.confidence * 100)}%
+                      </Badge>
+                    </div>
+                    <span className="text-muted-foreground text-[11px] tabular-nums">
+                      {aiSuggestion.latency_ms}ms
+                    </span>
+                  </div>
+                  <p className="font-medium leading-snug">{aiSuggestion.summary}</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Lý do: {aiSuggestion.reason}
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Phòng ban / Nhóm tiếp nhận (Đồng bộ động từ Keycloak Groups) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
@@ -256,7 +368,7 @@ export function RequestFormView({
                   if (departmentError) setDepartmentError('');
                 }}
                 className={cn(
-                  'border-input bg-background text-foreground focus:border-red-500 focus:ring-red-500/35 focus:ring-[3px] focus-visible:border-red-500 focus-visible:ring-red-500/35 focus-visible:ring-[3px] flex h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                  'border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/35 flex h-10 w-full rounded-md border px-3 text-sm transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-50',
                   !targetDepartment && 'text-muted-foreground',
                   departmentError &&
                     'border-destructive focus-visible:ring-destructive/20'
@@ -295,8 +407,8 @@ export function RequestFormView({
                   onClick={() => setComboboxOpen((prev) => !prev)}
                   aria-expanded={comboboxOpen}
                   className={cn(
-                    'border-input bg-background hover:bg-accent/50 flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors outline-none cursor-pointer focus:border-red-500 focus:ring-red-500/35 focus:ring-[3px] focus-visible:border-red-500 focus-visible:ring-red-500/35 focus-visible:ring-[3px]',
-                    comboboxOpen && 'border-red-500 ring-red-500/35 ring-[3px]'
+                    'border-input bg-background hover:bg-accent/50 flex h-10 w-full items-center justify-between rounded-md border px-3 text-sm transition-colors outline-none cursor-pointer focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/35',
+                    comboboxOpen && 'border-ring ring-1 ring-ring/35'
                   )}
                 >
                   <span className="truncate font-medium">{selectedCategory.name}</span>

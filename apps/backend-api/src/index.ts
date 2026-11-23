@@ -5,6 +5,7 @@ import { checkDatabaseConnection, ensureTablesExist, pool } from './config/datab
 import { initMinioBucket } from './config/minio-client.js';
 import { getKeycloakPublicKey } from './middlewares/auth-middleware.js';
 import { initSocketServer } from './realtime/socket-server.js';
+import { requestService } from './services/request-service.js';
 
 const startServer = async () => {
   console.log('='.repeat(60));
@@ -16,6 +17,7 @@ const startServer = async () => {
   const isDbConnected = await checkDatabaseConnection();
   if (isDbConnected) {
     await ensureTablesExist();
+    await requestService.backfillAuditHashChain();
   } else {
     console.warn('⚠️  Cảnh báo: Chưa thể kết nối PostgreSQL. Backend sẽ tiếp tục chạy và thử lại khi có request.');
   }

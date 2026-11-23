@@ -9,7 +9,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 SERVICE ?=
 
-.PHONY: help env up build down restart ps logs test smoke unit-test lint dev-fe dev-be clean
+.PHONY: help env up build down restart ps logs test smoke unit-test lint dev-fe dev-be backup restore clean
 
 help: ## Hiển thị danh sách toàn bộ lệnh hỗ trợ
 	@echo "=============================================================="
@@ -74,6 +74,16 @@ dev-fe: ## Chạy Frontend Vite HMR cục bộ trên cổng 5173 (không đụng
 
 dev-be: ## Chạy Backend Express chế độ phát triển cục bộ
 	cd apps/backend-api && npm run dev
+
+backup: ## Tạo snapshot sao lưu PostgreSQL + MinIO kèm checksum SHA-256 vào backups/
+	bash scripts/backup.sh
+
+restore: ## Kiểm chứng bản sao lưu mới nhất (--dry-run mặc định; truyền BACKUP_DIR=... MODE=apply để phục hồi thật)
+	@if [ "$(MODE)" = "apply" ]; then \
+		bash scripts/restore.sh $(BACKUP_DIR); \
+	else \
+		bash scripts/restore.sh --dry-run $(BACKUP_DIR); \
+	fi
 
 clean: ## [NGUY HIỂM] Dừng hệ thống và xóa toàn bộ container, network, volume & dữ liệu DB cục bộ
 	@echo "⚠️  CẢNH BÁO: Thao tác này sẽ XÓA SẠCH Database (PostgreSQL, Kong, Kestra) và tệp MinIO!"

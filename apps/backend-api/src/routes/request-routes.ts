@@ -14,6 +14,11 @@ requestRouter.get('/analytics', (req, res, next) =>
   requestController.getAnalytics(req, res, next)
 );
 
+// POST /api/requests/ai-suggest - Trợ lý phân tuyến thông minh [I] (khai báo trước /:id)
+requestRouter.post('/ai-suggest', (req, res, next) =>
+  requestController.suggestTriage(req, res, next)
+);
+
 // POST /api/requests - Tạo yêu cầu mới (kèm kiểm tra Poka-yoke + Audit Log + Kestra)
 requestRouter.post('/', (req, res, next) =>
   requestController.createRequest(req, res, next)

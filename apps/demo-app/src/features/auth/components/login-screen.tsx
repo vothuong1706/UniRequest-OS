@@ -55,11 +55,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
         <div className="flex flex-1 items-center justify-center py-12">
           <Card className="w-full max-w-sm border shadow-sm">
-            <CardHeader className="items-center text-center">
+            <CardHeader className="items-center justify-items-center text-center">
               <img
                 src="/logo-3d.png"
                 alt="UniRequest"
-                className="mb-2 size-18 object-contain drop-shadow-sm"
+                className="mx-auto mb-2 size-18 object-contain drop-shadow-sm"
               />
               <CardTitle className="text-xl">Đăng nhập</CardTitle>
               <CardDescription>Sử dụng tài khoản nhà trường để tiếp tục</CardDescription>

@@ -70,4 +70,11 @@ export const config = {
       'AVKU-Hy3zlWRpOxdXGK6pcTIUBiTzrA2XtGMyA2Hmz4',
     subject: process.env.VAPID_SUBJECT || 'mailto:admin@unirequest.edu.vn',
   },
+
+  ai: {
+    enabled: process.env.AI_ENABLED !== 'false',
+    ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
+    ollamaModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b',
+    timeoutMs: parseInt(process.env.AI_TIMEOUT_MS || '3500', 10),
+  },
 };

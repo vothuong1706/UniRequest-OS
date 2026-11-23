@@ -11,6 +11,10 @@ import {
   RequestPriority,
   RequestStatus,
 } from '../types/request.js';
+import {
+  AUDIT_GENESIS_HASH,
+  computeAuditEntryHash,
+} from '../utils/audit-hash-chain.js';
 
 const ELEVATED_ROLES = new Set(['canbo', 'giangvien', 'admin']);
 
@@ -216,10 +220,37 @@ export class RequestService {
     note?: string | null;
     metadata?: Record<string, unknown>;
   }): Promise<RequestAuditLogEntity> {
+    const latestRes = await query(
+      `SELECT entry_hash, created_at
+       FROM request_audit_logs
+       WHERE request_id = $1
+       ORDER BY created_at DESC, id DESC
+       LIMIT 1;`,
+      [params.requestId]
+    );
+    const latestRow = latestRes.rows[0] as
+      | { entry_hash?: string | null; created_at?: Date | string }
+      | undefined;
+
+    const prevHash = latestRow?.entry_hash || AUDIT_GENESIS_HASH;
+    const now = new Date();
+    const lastTs = latestRow?.created_at ? new Date(latestRow.created_at).getTime() : 0;
+    const createdAt = lastTs >= now.getTime() ? new Date(lastTs + 5) : now;
+
+    const entryHash = computeAuditEntryHash({
+      prevHash,
+      requestId: params.requestId,
+      actor: params.actor,
+      action: params.action,
+      toStatus: params.toStatus ?? null,
+      note: params.note ?? null,
+      createdAt,
+    });
+
     const sql = `
       INSERT INTO request_audit_logs
-        (request_id, actor, actor_roles, action, from_status, to_status, note, metadata)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)
+        (request_id, actor, actor_roles, action, from_status, to_status, note, metadata, prev_hash, entry_hash, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11)
       RETURNING *;
     `;
     const values = [
@@ -231,9 +262,52 @@ export class RequestService {
       params.toStatus ?? null,
       params.note ?? null,
       JSON.stringify(params.metadata ?? {}),
+      prevHash,
+      entryHash,
+      createdAt,
     ];
     const result = await query(sql, values);
     return result.rows[0] as RequestAuditLogEntity;
+  }
+
+  /**
+   * Niêm phong SHA-256 cho các bản ghi kiểm toán cũ chưa có prev_hash/entry_hash (chạy idempotent khi khởi động).
+   */
+  async backfillAuditHashChain(): Promise<void> {
+    const pendingReqs = await query(
+      `SELECT DISTINCT request_id FROM request_audit_logs WHERE entry_hash IS NULL;`
+    );
+    for (const reqRow of pendingReqs.rows as Array<{ request_id: string }>) {
+      const logsRes = await query(
+        `SELECT * FROM request_audit_logs WHERE request_id = $1 ORDER BY created_at ASC, id ASC;`,
+        [reqRow.request_id]
+      );
+      const logs = logsRes.rows as RequestAuditLogEntity[];
+      let prevHash = AUDIT_GENESIS_HASH;
+
+      for (const entry of logs) {
+        if (entry.entry_hash && entry.prev_hash) {
+          prevHash = entry.entry_hash;
+          continue;
+        }
+        const computed = computeAuditEntryHash({
+          prevHash,
+          requestId: entry.request_id,
+          actor: entry.actor,
+          action: entry.action,
+          toStatus: entry.to_status,
+          note: entry.note,
+          createdAt: entry.created_at,
+        });
+        await query(
+          `UPDATE request_audit_logs
+           SET prev_hash = $1, entry_hash = $2
+           WHERE id = $3 AND entry_hash IS NULL;`,
+          [prevHash, computed, entry.id]
+        );
+        prevHash = computed;
+      }
+    }
   }
 
   async createRequest(
@@ -338,7 +412,7 @@ export class RequestService {
 
   async getAuditLogsByRequestId(requestId: string): Promise<RequestAuditLogEntity[]> {
     const result = await query(
-      `SELECT * FROM request_audit_logs WHERE request_id = $1 ORDER BY created_at ASC;`,
+      `SELECT * FROM request_audit_logs WHERE request_id = $1 ORDER BY created_at ASC, id ASC;`,
       [requestId]
     );
     return result.rows as RequestAuditLogEntity[];

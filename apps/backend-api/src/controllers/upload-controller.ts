@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { storageService } from '../services/storage-service.js';
+import { validateUploadedFileBuffer } from '../utils/file-security.js';
 
 export class UploadController {
   /**
    * POST /api/upload
-   * Tải tệp tin lên MinIO và trả về URL công khai
+   * Kiểm dịch Magic Bytes trong RAM và tải tệp tin lên MinIO
    */
   async uploadFile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -12,6 +13,20 @@ export class UploadController {
         res.status(400).json({
           success: false,
           message: 'Không tìm thấy file tải lên trong request (tên trường quy định: "file")',
+        });
+        return;
+      }
+
+      const validation = validateUploadedFileBuffer({
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+        buffer: req.file.buffer,
+      });
+      if (!validation.ok) {
+        res.status(400).json({
+          success: false,
+          code: validation.code,
+          message: validation.message,
         });
         return;
       }
@@ -30,6 +45,46 @@ export class UploadController {
         },
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/upload/files/:objectName
+   * Phục vụ tệp đính kèm từ MinIO qua Same-Origin Proxy
+   */
+  async streamFile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { objectName } = req.params;
+      const { stream, contentType, size } = await storageService.getObjectStream(objectName);
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Length', String(size));
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+
+      stream.on('error', (streamError) => {
+        if (!res.headersSent) {
+          next(streamError);
+        }
+      });
+      stream.pipe(res);
+    } catch (error) {
+      const errWithCode = error as Error & { code?: string; statusCode?: number };
+      if (errWithCode?.code === 'NoSuchKey' || errWithCode?.code === 'NotFound') {
+        res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy tệp đính kèm.',
+        });
+        return;
+      }
+      if (errWithCode?.statusCode === 400) {
+        res.status(400).json({
+          success: false,
+          message: errWithCode.message,
+        });
+        return;
+      }
       next(error);
     }
   }

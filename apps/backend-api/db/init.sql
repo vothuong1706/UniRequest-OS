@@ -75,11 +75,18 @@ CREATE TABLE IF NOT EXISTS request_audit_logs (
     to_status VARCHAR(50),
     note TEXT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    prev_hash VARCHAR(64),
+    entry_hash VARCHAR(64),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE request_audit_logs
+    ADD COLUMN IF NOT EXISTS prev_hash VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS entry_hash VARCHAR(64);
+
 CREATE INDEX IF NOT EXISTS idx_audit_logs_request_id ON request_audit_logs(request_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON request_audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_request_chain ON request_audit_logs(request_id, created_at ASC, id ASC);
 
 -- 3. Bảng request_categories (Danh mục động tách riêng theo từng Phòng ban)
 CREATE TABLE IF NOT EXISTS request_categories (

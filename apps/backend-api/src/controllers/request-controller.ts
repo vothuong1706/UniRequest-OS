@@ -4,6 +4,7 @@ import {
   emitToStaff,
   emitToUser,
 } from '../realtime/socket-server.js';
+import { aiTriageService } from '../services/ai-triage-service.js';
 import { categoryService } from '../services/category-service.js';
 import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { notificationService } from '../services/notification-service.js';
@@ -16,6 +17,7 @@ import {
   extractPriorityFromDescription,
   workflowService,
 } from '../services/workflow-service.js';
+import { verifyAuditChain } from '../utils/audit-hash-chain.js';
 import {
   RequestDeleteMode,
   RequestPriority,
@@ -259,6 +261,55 @@ export class RequestController {
     }
   }
 
+  async suggestTriage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+        return;
+      }
+
+      const { title, description } = (req.body || {}) as {
+        title?: unknown;
+        description?: unknown;
+      };
+      const cleanTitle = typeof title === 'string' ? title.trim() : '';
+      const cleanDesc = typeof description === 'string' ? description.trim() : '';
+
+      if (`${cleanTitle} ${cleanDesc}`.trim().length < 3) {
+        res.status(400).json({
+          success: false,
+          code: 'INPUT_TOO_SHORT',
+          message: 'Vui lòng nhập tiêu đề hoặc mô tả tối thiểu 3 ký tự để AI phân tích.',
+        });
+        return;
+      }
+
+      const [departments, categories] = await Promise.all([
+        keycloakGroupService.listGroups(),
+        categoryService.list({ includeInactive: false }),
+      ]);
+
+      const suggestion = await aiTriageService.suggestTriage({
+        title: cleanTitle || cleanDesc.slice(0, 100),
+        description: cleanDesc,
+        departments,
+        categories,
+      });
+
+      res.status(200).json({
+        success: true,
+        data: suggestion,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAnalytics(
     req: Request,
     res: Response,
@@ -329,13 +380,30 @@ export class RequestController {
         return;
       }
 
-      const auditLogs = await requestService.getAuditLogsByRequestId(id);
+      const [auditLogs, departments, categories] = await Promise.all([
+        requestService.getAuditLogsByRequestId(id),
+        keycloakGroupService.listGroups(),
+        categoryService.list({ includeInactive: true }),
+      ]);
+
+      const aiInsight = aiTriageService.buildFastInsight({
+        title: existing.title,
+        description: existing.description ?? undefined,
+        departments,
+        categories,
+        currentCategoryCode: existing.category,
+        currentDepartment: existing.target_department,
+        currentPriority: existing.priority,
+      });
+      const auditIntegrity = verifyAuditChain(auditLogs);
 
       res.status(200).json({
         success: true,
         data: {
           ...existing,
           audit_logs: auditLogs,
+          audit_integrity: auditIntegrity,
+          ai_insight: aiInsight,
         },
       });
     } catch (error) {

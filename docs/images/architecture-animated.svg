@@ -1,246 +1,260 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 676" width="1120" height="676" role="img" aria-label="Kiến trúc động 2 tầng Open-Core của UniRequest-OS">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" width="1280" height="820" role="img" aria-label="Kiến trúc 3 tầng DX-OS Open-Core của UniRequest-OS">
   <defs>
     <style>
-      .title { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 800; fill: #f8fafc; }
-      .sub { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; fill: #94a3b8; }
-      .layer-label { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.8px; }
-      .card-title { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 700; font-size: 13.5px; fill: #f8fafc; }
-      .card-desc { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight: 500; font-size: 10.5px; fill: #cbd5e1; }
-      .pill { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 600; }
-      .edge-label { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; font-weight: 600; fill: #e2e8f0; }
-
-      .flow-blue {
-        stroke: #38bdf8;
-        stroke-width: 2.4;
-        fill: none;
-        stroke-dasharray: 8 6;
-        animation: dashMove 1.2s linear infinite;
-      }
-      .flow-green {
-        stroke: #34d399;
-        stroke-width: 2.4;
-        fill: none;
-        stroke-dasharray: 8 6;
-        animation: dashMove 1.4s linear infinite;
-      }
-      .flow-amber {
-        stroke: #fbbf24;
-        stroke-width: 2.4;
-        fill: none;
-        stroke-dasharray: 8 6;
-        animation: dashMove 1.1s linear infinite;
-      }
-      .flow-violet {
-        stroke: #a78bfa;
-        stroke-width: 2.4;
-        fill: none;
-        stroke-dasharray: 8 6;
-        animation: dashMove 1.3s linear infinite;
-      }
-      .pulse-dot {
-        animation: pulseGlow 2s ease-in-out infinite;
-      }
-      @keyframes dashMove {
-        from { stroke-dashoffset: 28; }
-        to { stroke-dashoffset: 0; }
-      }
-      @keyframes pulseGlow {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.35; }
-      }
+      .f { font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .h-zone { font-size: 12px; font-weight: 700; fill: #475569; letter-spacing: 0.6px; }
+      .h-tier { font-size: 12.5px; font-weight: 800; fill: #1e3a8a; letter-spacing: 0.5px; }
+      .title { font-size: 13px; font-weight: 700; fill: #0f172a; }
+      .sub { font-size: 11px; font-weight: 500; fill: #475569; }
+      .tiny { font-size: 10px; font-weight: 500; fill: #64748b; }
+      .edge-txt { font-size: 10.5px; font-weight: 600; fill: #334155; }
+      .wire { stroke: #64748b; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+      .wire-solid { stroke: #475569; stroke-width: 1.6; fill: none; }
+      .wire-amber { stroke: #d97706; stroke-width: 1.7; fill: none; stroke-dasharray: 5 4; }
     </style>
 
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#090d16"/>
-      <stop offset="50%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#0b1220"/>
-    </linearGradient>
-
-    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#64748b" />
     </marker>
-    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"/>
-    </marker>
-    <marker id="arrowAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
-    </marker>
-    <marker id="arrowViolet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a78bfa"/>
+    <marker id="arr-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#d97706" />
     </marker>
 
-    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
-      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#1e293b" stroke-width="0.7" opacity="0.5"/>
-    </pattern>
+    <!-- Paths for animated flow dots -->
+    <path id="p-req-in" d="M 192 260 L 240 260 L 240 120 L 420 120" />
+    <path id="p-gateway-core" d="M 380 430 L 440 430 L 440 465 L 485 465" />
+    <path id="p-core-kestra" d="M 650 565 L 705 565" />
+    <path id="p-core-pg" d="M 865 565 L 915 565" />
+    <path id="p-ai-route" d="M 380 680 L 915 680" />
+    <path id="p-push-out" d="M 1075 465 L 1110 465 L 1110 365 L 1125 365" />
   </defs>
 
-  <!-- Canvas -->
-  <rect width="1120" height="676" rx="18" fill="url(#bgGrad)"/>
-  <rect width="1120" height="676" rx="18" fill="url(#grid)"/>
+  <!-- Canvas background -->
+  <rect width="1280" height="820" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
 
-  <!-- Header -->
-  <text x="36" y="42" class="title" font-size="19.5">KIẾN TRÚC ĐỘNG 2 TẦNG OPEN-CORE - UNIREQUEST-OS</text>
-  <text x="36" y="64" class="sub" font-size="12">100% OSI Open Source · Zero-Trust Kong Gateway · Socket.IO + Web Push · Kestra Workflow (Apache-2.0)</text>
-  <rect x="920" y="24" width="164" height="28" rx="14" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
-  <circle cx="938" cy="38" r="4.5" fill="#34d399" class="pulse-dot"/>
-  <text x="950" y="42" class="pill" fill="#a7f3d0">PRODUCTION READY</text>
+  <!-- LEFT EXTERNAL: NGUOI DUNG -->
+  <rect x="24" y="190" width="168" height="250" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="5 4" />
+  <text x="108" y="214" text-anchor="middle" class="f h-zone">NGƯỜI DÙNG</text>
 
-  <!-- ==================== TIER 2: APPLICATION LAYER ==================== -->
-  <rect x="28" y="88" width="1064" height="172" rx="14" fill="#111c33" fill-opacity="0.72" stroke="#3b82f6" stroke-width="1.3" stroke-dasharray="6 4"/>
-  <text x="46" y="112" class="layer-label" fill="#60a5fa">TẦNG 2 · ỨNG DỤNG CỔNG DỊCH VỤ ĐẠI HỌC (APPLICATION LAYER)</text>
+  <rect x="38" y="232" width="140" height="76" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+  <text x="108" y="256" text-anchor="middle" class="f title">Trình duyệt / PWA</text>
+  <text x="108" y="274" text-anchor="middle" class="f sub">Sinh viên, Giảng viên,</text>
+  <text x="108" y="290" text-anchor="middle" class="f sub">Cán bộ phòng ban</text>
 
-  <!-- Actors Node -->
-  <g transform="translate(48, 132)">
-    <rect width="206" height="106" rx="12" fill="#1e293b" stroke="#475569" stroke-width="1.2"/>
-    <circle cx="22" cy="24" r="5" fill="#38bdf8" class="pulse-dot"/>
-    <text x="36" y="29" class="card-title">Người dùng</text>
-    <text x="16" y="52" class="card-desc">• Sinh viên (sinhvien)</text>
-    <text x="16" y="70" class="card-desc">• Cán bộ / GV (canbo, giangvien)</text>
-    <text x="16" y="88" class="card-desc">• Quản trị viên (admin)</text>
-  </g>
+  <rect x="38" y="330" width="140" height="86" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.4" />
+  <text x="108" y="354" text-anchor="middle" class="f title">Di động Internet</text>
+  <text x="108" y="372" text-anchor="middle" class="f sub">Truy cập công khai</text>
+  <text x="108" y="388" text-anchor="middle" class="f tiny">HTTPS (Caddy / Tunnel)</text>
+  <text x="108" y="403" text-anchor="middle" class="f tiny">Nhận Web Push VAPID</text>
 
-  <!-- Frontend Portal Node -->
-  <g transform="translate(314, 132)">
-    <rect width="332" height="106" rx="12" fill="#172554" stroke="#3b82f6" stroke-width="1.5"/>
-    <circle cx="22" cy="24" r="5" fill="#34d399" class="pulse-dot"/>
-    <text x="36" y="29" class="card-title">UniRequest Portal (Frontend + PWA)</text>
-    <text x="16" y="52" class="card-desc">React 19 · TypeScript · Shadcn/UI · Workbox SW</text>
-    <text x="16" y="70" class="card-desc">Socket.IO · Notification Center · Dynamic Form</text>
-    <rect x="16" y="80" width="96" height="18" rx="5" fill="#1e3a8a"/>
-    <text x="26" y="93" class="pill" fill="#bfdbfe">Nginx :3000</text>
-    <rect x="120" y="80" width="94" height="18" rx="5" fill="#064e3b"/>
-    <text x="130" y="93" class="pill" fill="#a7f3d0">PKCE S256</text>
-    <rect x="222" y="80" width="94" height="18" rx="5" fill="#312e81"/>
-    <text x="234" y="93" class="pill" fill="#c7d2fe">PWA + Push</text>
-  </g>
+  <!-- GATEWAY VERTICAL PILLAR: KONG + NGINX -->
+  <rect x="230" y="100" width="154" height="630" rx="12" fill="#ecfdf5" stroke="#14b8a6" stroke-width="1.8" />
+  <circle cx="368" cy="116" r="10" fill="#ffffff" stroke="#14b8a6" stroke-width="1.5" />
+  <text x="368" y="120" text-anchor="middle" class="mono" font-size="10" font-weight="700" fill="#0f766e">K</text>
+  <text x="307" y="340" text-anchor="middle" class="f title" font-size="15">Cổng API</text>
+  <text x="307" y="362" text-anchor="middle" class="f sub" font-weight="700">Kong 3.7.1 OSS</text>
+  <text x="307" y="380" text-anchor="middle" class="f tiny">+ Nginx Same-Origin</text>
+  <line x1="250" y1="398" x2="364" y2="398" stroke="#99f6e4" stroke-width="1.2" />
+  <text x="307" y="420" text-anchor="middle" class="f tiny">Cổng duy nhất mở ra ngoài</text>
+  <text x="307" y="446" text-anchor="middle" class="f sub">Kiểm JWT RS256 ở biên</text>
+  <text x="307" y="466" text-anchor="middle" class="f sub">Gắn X-Correlation-ID</text>
+  <text x="307" y="486" text-anchor="middle" class="f sub">Rate-Limit bảo vệ API</text>
+  <text x="307" y="506" text-anchor="middle" class="f sub">Proxy /api, /auth &amp; WS</text>
+  <text x="307" y="526" text-anchor="middle" class="f tiny">Dynamic Origin HTTPS</text>
 
-  <!-- Backend API Node -->
-  <g transform="translate(710, 132)">
-    <rect width="360" height="106" rx="12" fill="#064e3b" fill-opacity="0.7" stroke="#10b981" stroke-width="1.5"/>
-    <circle cx="22" cy="24" r="5" fill="#34d399" class="pulse-dot"/>
-    <text x="36" y="29" class="card-title">Backend API &amp; Realtime (Express TS)</text>
-    <text x="16" y="52" class="card-desc">JWT RS256 · RBAC · Socket.IO · Web Push VAPID</text>
-    <text x="16" y="70" class="card-desc">RAM Upload · Comments · Audit · Analytics</text>
-    <rect x="16" y="80" width="104" height="18" rx="5" fill="#065f46"/>
-    <text x="24" y="93" class="pill" fill="#a7f3d0">Node.js :4000</text>
-    <rect x="128" y="80" width="114" height="18" rx="5" fill="#0f766e"/>
-    <text x="136" y="93" class="pill" fill="#ccfbf1">/api + /socket</text>
-    <rect x="250" y="80" width="94" height="18" rx="5" fill="#134e4a"/>
-    <text x="260" y="93" class="pill" fill="#99f6e4">Apache-2.0</text>
-  </g>
+  <!-- OUTER DOCKER NETWORK CONTAINER -->
+  <rect x="422" y="24" width="668" height="726" rx="14" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="6 4" />
+  <text x="442" y="46" class="f h-zone">MẠNG NỘI BỘ DOCKER (UNIREQUEST-OS)</text>
 
-  <!-- ==================== TIER 1: HEADLESS OPEN-CORE ==================== -->
-  <rect x="28" y="294" width="1064" height="354" rx="14" fill="#0f172a" fill-opacity="0.88" stroke="#10b981" stroke-width="1.3"/>
-  <text x="46" y="318" class="layer-label" fill="#34d399">TẦNG 1 · NỀN TẢNG DỊCH VỤ LÕI HEADLESS OPEN-CORE (DOCKER COMPOSE)</text>
+  <!-- TIER 3: UNG DUNG NGANH -->
+  <rect x="442" y="60" width="628" height="66" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.8" />
+  <text x="756" y="81" text-anchor="middle" class="f h-tier">TẦNG 3 - ỨNG DỤNG NGHIỆP VỤ (PORTAL ĐẠI HỌC)</text>
+  <text x="756" y="102" text-anchor="middle" class="f sub">UniRequest Portal (React 19 PWA) + Backend API (Express + Socket.IO)</text>
 
-  <!-- Kong API Gateway (Center Top of Tier 1) -->
-  <g transform="translate(306, 336)">
-    <rect width="508" height="84" rx="12" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.6"/>
-    <circle cx="22" cy="24" r="5" fill="#a78bfa" class="pulse-dot"/>
-    <text x="36" y="29" class="card-title">Kong API Gateway 3.7.1 OSS (Zero-Trust Border)</text>
-    <text x="16" y="50" class="card-desc">Định tuyến /auth, /api &amp; WS /api/socket.io · Rate-Limit 120/m · X-Correlation-ID</text>
-    <rect x="16" y="58" width="108" height="18" rx="5" fill="#312e81"/>
-    <text x="26" y="71" class="pill" fill="#e0e7ff">Proxy :8000</text>
-    <rect x="132" y="58" width="124" height="18" rx="5" fill="#3730a3"/>
-    <text x="142" y="71" class="pill" fill="#c7d2fe">Auto kong-init</text>
-    <rect x="264" y="58" width="96" height="18" rx="5" fill="#1e3a8a"/>
-    <text x="276" y="71" class="pill" fill="#bfdbfe">Apache-2.0</text>
-  </g>
+  <!-- TIER 2: KHONG GIAN H - P - D - I -->
+  <rect x="442" y="142" width="628" height="218" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4" />
+  <text x="756" y="164" text-anchor="middle" class="f h-zone" fill="#0f172a">TẦNG 2 - KHÔNG GIAN NĂNG LỰC SỐ H - P - D - I</text>
 
-  <!-- 4 Core Services Row -->
-  <!-- 1. Keycloak SSO -->
-  <g transform="translate(48, 466)">
-    <rect width="234" height="122" rx="12" fill="#1e293b" stroke="#38bdf8" stroke-width="1.4"/>
-    <circle cx="22" cy="24" r="4.5" fill="#38bdf8" class="pulse-dot"/>
-    <text x="34" y="29" class="card-title">1. Keycloak 26.0 SSO</text>
-    <text x="16" y="51" class="card-desc">Identity &amp; RBAC Tập trung</text>
-    <text x="16" y="69" class="card-desc">OIDC · JWT RS256 · PKCE S256</text>
-    <text x="16" y="87" class="card-desc">Auto-import realm-export.json</text>
-    <rect x="16" y="96" width="84" height="18" rx="5" fill="#0c4a6e"/>
-    <text x="24" y="109" class="pill" fill="#bae6fd">Port :8080</text>
-    <rect x="108" y="96" width="92" height="18" rx="5" fill="#1e3a8a"/>
-    <text x="118" y="109" class="pill" fill="#bfdbfe">Apache-2.0</text>
-  </g>
+  <!-- Header bar across 4 spaces -->
+  <rect x="458" y="174" width="596" height="28" rx="6" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1" />
+  <text x="756" y="192" text-anchor="middle" class="f sub" font-weight="700" fill="#0f172a">Giao diện thích ứng theo vai trò (Sinh viên · Giảng viên · Cán bộ · Admin)</text>
 
-  <!-- 2. PostgreSQL 16 -->
-  <g transform="translate(306, 466)">
-    <rect width="234" height="122" rx="12" fill="#1e293b" stroke="#34d399" stroke-width="1.4"/>
-    <circle cx="22" cy="24" r="4.5" fill="#34d399" class="pulse-dot"/>
-    <text x="34" y="29" class="card-title">2. PostgreSQL 16</text>
-    <text x="16" y="51" class="card-desc">Requests · Categories · Audit</text>
-    <text x="16" y="69" class="card-desc">Notifications · Comments · Push</text>
-    <text x="16" y="87" class="card-desc">DB riêng cho Kestra Workflow</text>
-    <rect x="16" y="96" width="84" height="18" rx="5" fill="#064e3b"/>
-    <text x="24" y="109" class="pill" fill="#a7f3d0">Port :5432</text>
-    <rect x="108" y="96" width="110" height="18" rx="5" fill="#065f46"/>
-    <text x="116" y="109" class="pill" fill="#d1fae5">PostgreSQL OSI</text>
-  </g>
+  <!-- [H] Human -->
+  <rect x="458" y="212" width="142" height="134" rx="8" fill="#f5f3ff" stroke="#a855f7" stroke-width="1.5" />
+  <text x="529" y="232" text-anchor="middle" class="f title" fill="#6b21a8">[H] Con người</text>
+  <text x="529" y="254" text-anchor="middle" class="f tiny">Đăng nhập 1 lần SSO</text>
+  <text x="529" y="272" text-anchor="middle" class="f tiny">Bình luận 2 chiều live</text>
+  <text x="529" y="290" text-anchor="middle" class="f tiny">Thông báo tách theo Ban</text>
+  <text x="529" y="308" text-anchor="middle" class="f tiny">Ứng dụng PWA cài đặt</text>
+  <text x="529" y="326" text-anchor="middle" class="f tiny">In phiếu xác nhận</text>
 
-  <!-- 3. MinIO / Silo S3 -->
-  <g transform="translate(564, 466)">
-    <rect width="234" height="122" rx="12" fill="#1e293b" stroke="#f472b6" stroke-width="1.4"/>
-    <circle cx="22" cy="24" r="4.5" fill="#f472b6" class="pulse-dot"/>
-    <text x="34" y="29" class="card-title">3. MinIO / Silo S3</text>
-    <text x="16" y="51" class="card-desc">Lưu trữ tệp đính kèm (Object)</text>
-    <text x="16" y="69" class="card-desc">Bucket unirequest-files (&lt;= 20MB)</text>
-    <text x="16" y="87" class="card-desc">Đẩy trực tiếp từ RAM Buffer</text>
-    <rect x="16" y="96" width="104" height="18" rx="5" fill="#831843"/>
-    <text x="24" y="109" class="pill" fill="#fbcfe8">S3 :9000/:9001</text>
-    <rect x="126" y="96" width="92" height="18" rx="5" fill="#500724"/>
-    <text x="134" y="109" class="pill" fill="#f9a8d4">AGPL / OSI</text>
-  </g>
+  <!-- [P] Process -->
+  <rect x="610" y="212" width="142" height="134" rx="8" fill="#fefce8" stroke="#eab308" stroke-width="1.5" />
+  <text x="681" y="232" text-anchor="middle" class="f title" fill="#854d0e">[P] Quy trình</text>
+  <text x="681" y="254" text-anchor="middle" class="f tiny">Định tuyến Group động</text>
+  <text x="681" y="272" text-anchor="middle" class="f tiny">Danh mục riêng từng Ban</text>
+  <text x="681" y="290" text-anchor="middle" class="f tiny">Kiểm soát đầu vào 2 lớp</text>
+  <text x="681" y="308" text-anchor="middle" class="f tiny">Xóa độc lập 2 phía</text>
+  <text x="681" y="326" text-anchor="middle" class="f tiny">Cảnh báo quá hạn SLA</text>
 
-  <!-- 4. Kestra Workflow Engine -->
-  <g transform="translate(822, 466)">
-    <rect width="248" height="122" rx="12" fill="#271c0a" stroke="#fbbf24" stroke-width="1.6"/>
-    <circle cx="22" cy="24" r="4.5" fill="#fbbf24" class="pulse-dot"/>
-    <text x="34" y="29" class="card-title">4. Kestra Workflow</text>
-    <text x="16" y="51" class="card-desc">GitOps Declarative YAML Flows</text>
-    <text x="16" y="69" class="card-desc">Phân tuyến phòng ban &amp; SLA &lt; 2h</text>
-    <text x="16" y="87" class="card-desc">Webhook Basic-Auth + kestra-init</text>
-    <rect x="16" y="96" width="84" height="18" rx="5" fill="#78350f"/>
-    <text x="24" y="109" class="pill" fill="#fde68a">UI :8085</text>
-    <rect x="108" y="96" width="96" height="18" rx="5" fill="#92400e"/>
-    <text x="118" y="109" class="pill" fill="#fef3c7">Apache-2.0</text>
-  </g>
+  <!-- [D] Data -->
+  <rect x="762" y="212" width="142" height="134" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+  <text x="833" y="232" text-anchor="middle" class="f title" fill="#1e40af">[D] Dữ liệu</text>
+  <text x="833" y="254" text-anchor="middle" class="f tiny">Dashboard thống kê 7 ngày</text>
+  <text x="833" y="272" text-anchor="middle" class="f tiny">Sổ cái Audit SHA-256</text>
+  <text x="833" y="290" text-anchor="middle" class="f tiny">Kho tệp S3 an toàn</text>
+  <text x="833" y="308" text-anchor="middle" class="f tiny">Xuất CSV báo cáo ngày</text>
+  <text x="833" y="326" text-anchor="middle" class="f tiny">Xác minh toàn vẹn đơn</text>
 
-  <!-- ==================== ANIMATED DATA FLOWS ==================== -->
-  <!-- User -> Frontend -->
-  <path d="M 254 185 L 310 185" class="flow-blue" marker-end="url(#arrowBlue)"/>
-  <text x="262" y="177" class="edge-label">HTTPS</text>
+  <!-- [I] Intelligence -->
+  <rect x="914" y="212" width="140" height="134" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5" />
+  <text x="984" y="232" text-anchor="middle" class="f title" fill="#166534">[I] Trí tuệ</text>
+  <text x="984" y="254" text-anchor="middle" class="f tiny">Gợi ý phân tuyến AI</text>
+  <text x="984" y="272" text-anchor="middle" class="f tiny">Tóm tắt đơn cho Ban</text>
+  <text x="984" y="290" text-anchor="middle" class="f tiny">Hybrid Ollama LLM</text>
+  <text x="984" y="308" text-anchor="middle" class="f tiny">Local Vietnamese NLP</text>
+  <text x="984" y="326" text-anchor="middle" class="f tiny">Đối chiếu DB thực tế</text>
 
-  <!-- Frontend -> Kong -->
-  <path d="M 465 238 L 465 332" class="flow-violet" marker-end="url(#arrowViolet)"/>
-  <rect x="358" y="271" width="214" height="18" rx="4" fill="#090d16" fill-opacity="0.92"/>
-  <text x="366" y="284" class="edge-label">JWT · /auth, /api &amp; WS /socket.io</text>
+  <!-- TIER 1: LOI KHONG GIAO DIEN (HEADLESS CORE) -->
+  <rect x="442" y="376" width="628" height="354" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4" />
+  <text x="1054" y="396" text-anchor="end" class="f h-zone">TẦNG 1 - LÕI KHÔNG GIAO DIỆN (HEADLESS OPEN-CORE)</text>
 
-  <!-- Kong -> Backend -->
-  <path d="M 756 336 L 756 242" class="flow-green" marker-end="url(#arrowGreen)"/>
-  <rect x="764" y="271" width="158" height="18" rx="4" fill="#090d16" fill-opacity="0.92"/>
-  <text x="772" y="284" class="edge-label">/api + Correlation-ID</text>
+  <!-- Row 1 of Tier 1 -->
+  <rect x="464" y="416" width="184" height="82" rx="8" fill="#faf5ff" stroke="#a855f7" stroke-width="1.6" />
+  <text x="556" y="440" text-anchor="middle" class="f title">Keycloak 26.0</text>
+  <text x="556" y="458" text-anchor="middle" class="f tiny">OIDC PKCE S256 (Apache-2.0)</text>
+  <text x="556" y="474" text-anchor="middle" class="f tiny">Cây Group &amp; JWT RS256</text>
 
-  <!-- Kong -> Keycloak -->
-  <path d="M 306 382 L 165 382 L 165 462" class="flow-blue" marker-end="url(#arrowBlue)"/>
-  <rect x="174" y="366" width="118" height="18" rx="4" fill="#090d16" fill-opacity="0.92"/>
-  <text x="182" y="379" class="edge-label">/auth (OIDC SSO)</text>
+  <rect x="684" y="416" width="184" height="82" rx="8" fill="#fefce8" stroke="#eab308" stroke-width="1.6" />
+  <text x="776" y="440" text-anchor="middle" class="f title">Kestra OSS</text>
+  <text x="776" y="458" text-anchor="middle" class="f tiny">Workflow Engine (Apache-2.0)</text>
+  <text x="776" y="474" text-anchor="middle" class="f tiny">3 Flows GitOps YAML (SLA, CSV)</text>
 
-  <!-- Backend -> PostgreSQL -->
-  <path d="M 850 238 L 850 434 L 423 434 L 423 462" class="flow-green" marker-end="url(#arrowGreen)"/>
-  <rect x="434" y="423" width="154" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
-  <text x="442" y="436" class="edge-label">OLTP + Notifications</text>
+  <rect x="904" y="416" width="146" height="82" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" />
+  <text x="977" y="440" text-anchor="middle" class="f title">Socket.IO + Push</text>
+  <text x="977" y="458" text-anchor="middle" class="f tiny">Realtime phòng ban</text>
+  <text x="977" y="474" text-anchor="middle" class="f tiny">Web Push VAPID</text>
 
-  <!-- Backend -> MinIO -->
-  <path d="M 906 238 L 906 446 L 681 446 L 681 462" class="flow-violet" marker-end="url(#arrowViolet)"/>
-  <rect x="692" y="436" width="122" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
-  <text x="700" y="449" class="edge-label">S3 Buffer Upload</text>
+  <!-- Row 2 of Tier 1 -->
+  <rect x="464" y="522" width="184" height="82" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.6" />
+  <text x="556" y="546" text-anchor="middle" class="f title">Trạm kiểm dịch tệp</text>
+  <text x="556" y="564" text-anchor="middle" class="f tiny">Magic Bytes trong RAM Buffer</text>
+  <text x="556" y="580" text-anchor="middle" class="f tiny">Chặn .exe, .svg, tệp giả mạo</text>
 
-  <!-- Backend -> Kestra -->
-  <path d="M 982 238 L 982 462" class="flow-amber" marker-end="url(#arrowAmber)"/>
-  <rect x="912" y="346" width="142" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
-  <text x="920" y="359" class="edge-label">Webhook Lifecycle</text>
+  <rect x="684" y="522" width="184" height="82" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" />
+  <text x="776" y="546" text-anchor="middle" class="f title">PostgreSQL 16</text>
+  <text x="776" y="564" text-anchor="middle" class="f tiny">OLTP 7 bảng nghiệp vụ</text>
+  <text x="776" y="580" text-anchor="middle" class="f tiny">Sổ cái SHA-256 (prev/entry hash)</text>
 
-  <!-- Kestra -> Postgres (Routed cleanly BELOW all 4 cards so nothing overlaps!) -->
-  <path d="M 946 588 L 946 620 L 423 620 L 423 592" class="flow-amber" marker-end="url(#arrowAmber)"/>
-  <rect x="614" y="610" width="142" height="18" rx="4" fill="#090d16" fill-opacity="0.95"/>
-  <text x="622" y="623" class="edge-label">Queue &amp; Flow State</text>
+  <rect x="904" y="522" width="146" height="82" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" />
+  <text x="977" y="546" text-anchor="middle" class="f title">MinIO S3 (Silo)</text>
+  <text x="977" y="564" text-anchor="middle" class="f tiny">Kho tệp đính kèm</text>
+  <text x="977" y="580" text-anchor="middle" class="f tiny">&amp; Báo cáo CSV ngày</text>
+
+  <!-- Row 3 of Tier 1 -->
+  <rect x="464" y="628" width="184" height="82" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.6" />
+  <text x="556" y="652" text-anchor="middle" class="f title">AI Triage Engine [I]</text>
+  <text x="556" y="670" text-anchor="middle" class="f tiny">Hybrid Ollama LLM</text>
+  <text x="556" y="686" text-anchor="middle" class="f tiny">+ Local Vietnamese NLP</text>
+
+  <rect x="684" y="628" width="184" height="82" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
+  <text x="776" y="652" text-anchor="middle" class="f title">Quan sát &amp; Kiểm thử</text>
+  <text x="776" y="670" text-anchor="middle" class="f tiny">X-Correlation-ID Trace</text>
+  <text x="776" y="686" text-anchor="middle" class="f tiny">Vitest + E2E Verification</text>
+
+  <rect x="904" y="628" width="146" height="82" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
+  <text x="977" y="652" text-anchor="middle" class="f title">Backup &amp; Restore</text>
+  <text x="977" y="670" text-anchor="middle" class="f tiny">PostgreSQL + MinIO</text>
+  <text x="977" y="686" text-anchor="middle" class="f tiny">Kiểm chứng SHA256SUMS</text>
+
+  <!-- RIGHT EXTERNAL: KENH NGOAI -->
+  <rect x="1116" y="290" width="144" height="310" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="5 4" />
+  <text x="1188" y="314" text-anchor="middle" class="f h-zone">NGOÀI HỆ THỐNG</text>
+
+  <rect x="1128" y="334" width="120" height="66" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.3" />
+  <text x="1188" y="358" text-anchor="middle" class="f title">Web Push</text>
+  <text x="1188" y="376" text-anchor="middle" class="f tiny">Thông báo trình duyệt</text>
+  <text x="1188" y="390" text-anchor="middle" class="f tiny">&amp; thiết bị di động</text>
+
+  <rect x="1128" y="420" width="120" height="66" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.3" />
+  <text x="1188" y="444" text-anchor="middle" class="f title">Caddy / Tunnel</text>
+  <text x="1188" y="462" text-anchor="middle" class="f tiny">HTTPS Internet</text>
+  <text x="1188" y="476" text-anchor="middle" class="f tiny">Automatic TLS</text>
+
+  <rect x="1128" y="506" width="120" height="66" rx="8" fill="#ffffff" stroke="#22c55e" stroke-width="1.3" />
+  <text x="1188" y="530" text-anchor="middle" class="f title">Ollama Host</text>
+  <text x="1188" y="548" text-anchor="middle" class="f tiny">LLM nội bộ (tùy chọn)</text>
+  <text x="1188" y="562" text-anchor="middle" class="f tiny">Fallback Local NLP</text>
+
+  <!-- CONNECTION WIRES -->
+  <line x1="178" y1="270" x2="234" y2="270" class="wire-solid" marker-end="url(#arr)" />
+  <line x1="178" y1="372" x2="234" y2="372" class="wire" marker-end="url(#arr)" />
+
+  <path d="M 380 94 L 440 94" class="wire" marker-end="url(#arr)" />
+  <text x="410" y="88" text-anchor="middle" class="mono edge-txt">/</text>
+
+  <path d="M 380 250 L 440 250" class="wire" marker-end="url(#arr)" />
+  <text x="410" y="244" text-anchor="middle" class="mono edge-txt">/api</text>
+
+  <path d="M 380 455 L 462 455" class="wire" marker-end="url(#arr)" />
+  <text x="414" y="448" text-anchor="middle" class="mono edge-txt">/auth</text>
+
+  <path d="M 380 562 L 462 562" class="wire" marker-end="url(#arr)" />
+  <text x="414" y="555" text-anchor="middle" class="mono edge-txt">/upload</text>
+
+  <path d="M 380 668 L 462 668" class="wire" marker-end="url(#arr)" />
+  <text x="414" y="661" text-anchor="middle" class="mono edge-txt">/ai</text>
+
+  <!-- Internal Tier 1 links -->
+  <line x1="648" y1="562" x2="682" y2="562" class="wire-amber" marker-end="url(#arr-amber)" />
+  <line x1="776" y1="498" x2="776" y2="520" class="wire-amber" marker-end="url(#arr-amber)" />
+  <line x1="868" y1="562" x2="902" y2="562" class="wire" marker-end="url(#arr)" />
+  <path d="M 868 455 L 902 455" class="wire" marker-end="url(#arr)" />
+
+  <!-- External links -->
+  <path d="M 1050 455 L 1096 455 L 1096 367 L 1126 367" class="wire" marker-end="url(#arr)" />
+  <path d="M 1050 470 L 1126 470" class="wire" marker-end="url(#arr)" />
+  <path d="M 648 686 L 672 686 L 672 722 L 1096 722 L 1096 539 L 1126 539" class="wire" marker-end="url(#arr)" />
+
+  <!-- ANIMATED REQUEST FLOW DOTS (Chấm vàng: luồng yêu cầu đi qua hệ thống) -->
+  <circle r="4.2" fill="#eab308" stroke="#ffffff" stroke-width="1">
+    <animateMotion dur="3.6s" repeatCount="indefinite" path="M 178 270 L 240 270 L 240 94 L 442 94" />
+  </circle>
+  <circle r="4.2" fill="#eab308" stroke="#ffffff" stroke-width="1">
+    <animateMotion dur="3.8s" begin="0.7s" repeatCount="indefinite" path="M 380 455 L 464 455" />
+  </circle>
+  <circle r="4.2" fill="#eab308" stroke="#ffffff" stroke-width="1">
+    <animateMotion dur="3.2s" begin="1.1s" repeatCount="indefinite" path="M 380 562 L 684 562 L 904 562" />
+  </circle>
+  <circle r="4.2" fill="#eab308" stroke="#ffffff" stroke-width="1">
+    <animateMotion dur="2.8s" begin="0.4s" repeatCount="indefinite" path="M 776 498 L 776 522" />
+  </circle>
+  <circle r="4.2" fill="#eab308" stroke="#ffffff" stroke-width="1">
+    <animateMotion dur="3.5s" begin="1.5s" repeatCount="indefinite" path="M 904 455 L 1050 455 L 1096 455 L 1096 367 L 1128 367" />
+  </circle>
+
+  <!-- BOTTOM LEGEND -->
+  <line x1="24" y1="768" x2="1256" y2="768" stroke="#e2e8f0" stroke-width="1.2" />
+
+  <rect x="30" y="782" width="14" height="14" rx="3" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
+  <text x="50" y="793" class="f sub">Ứng dụng / Dữ liệu [D]</text>
+
+  <rect x="200" y="782" width="14" height="14" rx="3" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5" />
+  <text x="220" y="793" class="f sub">Định danh [H]</text>
+
+  <rect x="330" y="782" width="14" height="14" rx="3" fill="#fefce8" stroke="#eab308" stroke-width="1.5" />
+  <text x="350" y="793" class="f sub">Quy trình [P]</text>
+
+  <rect x="460" y="782" width="14" height="14" rx="3" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5" />
+  <text x="480" y="793" class="f sub">Trí tuệ AI [I]</text>
+
+  <rect x="590" y="782" width="14" height="14" rx="3" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" />
+  <text x="610" y="793" class="f sub">Kiểm dịch &amp; Tin cậy</text>
+
+  <rect x="755" y="782" width="14" height="14" rx="3" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
+  <text x="775" y="793" class="f sub">Vận hành</text>
+
+  <circle cx="885" cy="789" r="5" fill="#eab308" />
+  <text x="898" y="793" class="f sub" font-weight="600">Chấm vàng: luồng yêu cầu đi qua hệ thống DX-OS</text>
 </svg>

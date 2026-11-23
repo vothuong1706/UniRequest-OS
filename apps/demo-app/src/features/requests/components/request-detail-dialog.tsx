@@ -6,8 +6,12 @@ import {
   Loader2,
   Paperclip,
   Printer,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
   X,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,8 +22,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { formatDateTime, isImageUrl } from '@/lib/format';
-import { requestsApi } from '@/services/api-client';
+import { formatDateTime, isImageUrl, resolveAttachmentUrl } from '@/lib/format';
+import { API_BASE_URL, requestsApi } from '@/services/api-client';
 import type {
   AuditAction,
   DepartmentGroupItem,
@@ -200,7 +204,11 @@ export function RequestDetailDialog({
   const auditLogs = matchedDetail?.audit_logs ?? [];
   const { categoryLabel, department, targetDepartmentLabel, priority, cleanDescription } =
     resolveRequestDisplay(activeItem, categories, departments);
-  const hasImagePreview = isImageUrl(activeItem.attachment_url);
+  const resolvedAttachmentUrl = resolveAttachmentUrl(
+    activeItem.attachment_url,
+    API_BASE_URL
+  );
+  const hasImagePreview = isImageUrl(resolvedAttachmentUrl);
 
   return (
     <Dialog open={Boolean(request)} onOpenChange={(open) => !open && onClose()}>
@@ -231,6 +239,34 @@ export function RequestDetailDialog({
             </p>
           </div>
 
+          {/* Phân tích thông minh [I] */}
+          {matchedDetail?.ai_insight && (
+            <div className="bg-muted/50 space-y-1.5 rounded-lg border p-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
+                  <Sparkles className="size-3.5" />
+                  <span>Phân tích thông minh [I]</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="secondary" className="text-[11px]">
+                    {matchedDetail.ai_insight.provider === 'ollama'
+                      ? `Ollama (${matchedDetail.ai_insight.model ?? 'LLM'})`
+                      : 'Local NLP Engine'}
+                  </Badge>
+                  <Badge variant="outline" className="text-[11px] tabular-nums">
+                    {Math.round(matchedDetail.ai_insight.confidence * 100)}%
+                  </Badge>
+                </div>
+              </div>
+              <p className="text-xs font-medium leading-snug">
+                {matchedDetail.ai_insight.summary}
+              </p>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {matchedDetail.ai_insight.reason}
+              </p>
+            </div>
+          )}
+
           {/* Kết quả xử lý */}
           {(activeItem.reviewed_by || activeItem.review_note) && (
             <div className="bg-muted space-y-1 rounded-lg border p-3.5">
@@ -250,18 +286,18 @@ export function RequestDetailDialog({
           )}
 
           {/* Tệp đính kèm */}
-          {activeItem.attachment_url && (
+          {resolvedAttachmentUrl && (
             <div className="space-y-2">
               <p className="text-muted-foreground text-xs font-medium">Tệp đính kèm</p>
               {hasImagePreview && (
                 <img
-                  src={activeItem.attachment_url}
+                  src={resolvedAttachmentUrl}
                   alt={activeItem.title}
                   className="bg-muted max-h-56 w-full rounded-lg border object-contain"
                 />
               )}
               <Button variant="outline" size="sm" asChild>
-                <a href={activeItem.attachment_url} target="_blank" rel="noreferrer">
+                <a href={resolvedAttachmentUrl} target="_blank" rel="noreferrer">
                   <Paperclip className="size-3.5" />
                   <span>Mở tệp đính kèm</span>
                   <ExternalLink className="size-3" />
@@ -279,10 +315,40 @@ export function RequestDetailDialog({
 
           {/* Lịch sử xử lý */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-medium">
-              <History className="text-muted-foreground size-3.5" />
-              <span>Lịch sử xử lý</span>
-              {loadingDetail && <Loader2 className="size-3 animate-spin" />}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium">
+                <History className="text-muted-foreground size-3.5" />
+                <span>Lịch sử xử lý</span>
+                {loadingDetail && <Loader2 className="size-3 animate-spin" />}
+              </div>
+              {matchedDetail?.audit_integrity &&
+                matchedDetail.audit_integrity.checked_entries > 0 && (
+                  <Badge
+                    variant={
+                      matchedDetail.audit_integrity.valid ? 'outline' : 'destructive'
+                    }
+                    title={
+                      matchedDetail.audit_integrity.reason ||
+                      `Latest SHA-256: ${matchedDetail.audit_integrity.latest_hash ?? ''}`
+                    }
+                    className={
+                      matchedDetail.audit_integrity.valid
+                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px]'
+                        : 'text-[11px]'
+                    }
+                  >
+                    {matchedDetail.audit_integrity.valid ? (
+                      <ShieldCheck className="mr-1 size-3" />
+                    ) : (
+                      <ShieldAlert className="mr-1 size-3" />
+                    )}
+                    <span>
+                      {matchedDetail.audit_integrity.valid
+                        ? `Chuỗi SHA-256 hợp lệ (${matchedDetail.audit_integrity.checked_entries})`
+                        : 'Cảnh báo sai lệch sổ cái'}
+                    </span>
+                  </Badge>
+                )}
             </div>
 
             {auditLogs.length === 0 ? (

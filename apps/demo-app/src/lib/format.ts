@@ -45,3 +45,37 @@ export function isImageUrl(url?: string | null): boolean {
   if (!url) return false;
   return /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(url);
 }
+
+/**
+ * Chuẩn hóa URL tệp đính kèm để hoạt động cả trên localhost lẫn domain HTTPS Internet
+ * (chuyển đổi cả đường dẫn cũ http://localhost:9000/unirequest-files/... sang /api/upload/files/...).
+ */
+function resolveApiOrigin(apiBaseUrl: string): string {
+  try {
+    return new URL(apiBaseUrl).origin;
+  } catch {
+    return typeof window !== 'undefined' ? window.location.origin : '';
+  }
+}
+
+export function resolveAttachmentUrl(
+  url: string | null | undefined,
+  apiBaseUrl: string
+): string | null {
+  if (!url) return null;
+
+  const apiOrigin = resolveApiOrigin(apiBaseUrl);
+
+  if (url.startsWith('/api/')) {
+    return `${apiOrigin}${url}`;
+  }
+
+  const legacyMinioMatch = url.match(
+    /^https?:\/\/(?:localhost|127\.0\.0\.1|minio):9000\/[^/]+\/(.+)$/i
+  );
+  if (legacyMinioMatch?.[1]) {
+    return `${apiOrigin}/api/upload/files/${legacyMinioMatch[1]}`;
+  }
+
+  return url;
+}
