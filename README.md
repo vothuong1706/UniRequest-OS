@@ -72,7 +72,7 @@ UniRequest-OS tuân thủ **Khung kiến trúc 3 tầng của DX-OS**:
 
 [![Kiến trúc 3 tầng DX-OS của UniRequest-OS](docs/images/architecture.png)](docs/images/architecture-animated.svg)
 
-> Xem chi tiết bộ sơ đồ UML 2.x (Use Case, Sequence, State, Class, Deployment) tại [`docs/uml.md`](docs/uml.md) (và [bản kiến trúc SVG động](docs/images/architecture-animated.svg)).
+> Xem bộ sơ đồ UML 2.x tại [`docs/uml.md`](docs/uml.md) · Bản đồ tài liệu 5 phút tại [`docs/README.md`](docs/README.md) · Kiến trúc & Dữ liệu tại [`docs/architecture.md`](docs/architecture.md) · Vận hành & Kiểm chứng tại [`docs/operations.md`](docs/operations.md).
 
 | Thành phần | Công nghệ & Chuẩn | Giấy phép OSI | Vai trò trong UniRequest-OS |
 | :--- | :--- | :---: | :--- |

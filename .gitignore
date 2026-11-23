@@ -27,6 +27,9 @@ config/kestra/storage/
 # Tài liệu ghi chú / đặc tả nháp / báo cáo nội bộ / thư mục ảnh tham khảo (giữ nguyên docs/images/ cho README)
 docs/specs/
 docs/*.md
+!docs/README.md
+!docs/architecture.md
+!docs/operations.md
 !docs/uml.md
 BAOCAO/
 *.docx
