@@ -144,14 +144,25 @@ make unit-test && make test
 - **Laptop / WSL2 (không cần tên miền, qua Cloudflare Quick Tunnel):** `bash scripts/internet-demo.sh`
 - **VPS có tên miền riêng (tự động cấp TLS HTTPS qua Caddy):** `PUBLIC_DOMAIN=unirequest.domain.vn bash scripts/internet-demo.sh caddy`
 
-### Tài khoản mẫu & Địa chỉ truy cập
+### Tài khoản mẫu (tự động nạp từ `config/keycloak/realm-export.json`)
 
-| Tài khoản          |        Mật khẩu        | Vai trò & Nhóm Keycloak       | Địa chỉ dịch vụ mặc định                                                                                |
-| :------------------- | :----------------------: | :------------------------------ | :-------------------------------------------------------------------------------------------------------------- |
-| `sinhvien`         |      `Admin@123`      | `sinhvien` · `/Lớp/K11A1` | Portal: [http://localhost:3000](http://localhost:3000)                                                           |
-| `canbo`            |        `123456`        | `canbo` · `/CTSV`          | Kong Gateway: [http://localhost:8000](http://localhost:8000)                                                     |
-| `giangvien`        |        `123456`        | `giangvien` · `/KETOAN`    | Kestra UI: [http://localhost:8085](http://localhost:8085) (`admin@unirequest.edu.vn` / `KestraAdmin2026!`)   |
-| *Admin hệ thống* | *Đặt trong `.env`* | Quản trị qua Keycloak Console | Keycloak: [http://localhost:8080](http://localhost:8080) · MinIO: [http://localhost:9001](http://localhost:9001) |
+| Tài khoản | Mật khẩu | Vai trò | Nhóm Keycloak | Ghi chú |
+| :--- | :---: | :--- | :--- | :--- |
+| `sinhvien` | `Admin@123` | `sinhvien` | `/Lớp/K11A1` | Chỉ xem đơn cá nhân do chính mình tạo |
+| `sinhvien2` | `1234567` | `sinhvien` | `/Lớp/k11A2` | Tách biệt hoàn toàn dữ liệu với `sinhvien` |
+| `canbo` | `123456` | `canbo` | `/CTSV` | Tiếp nhận và xử lý đơn thuộc Ban `CTSV` |
+| `giangvien` | `123456` | `giangvien` | `/KETOAN` | Tiếp nhận và xử lý đơn thuộc Ban `KETOAN` |
+| *Admin hệ thống* | *Đặt trong `.env`* | `admin` | Keycloak Console | Không cài mật khẩu mặc định trong realm |
+
+### Địa chỉ truy cập các dịch vụ
+
+| Dịch vụ | Địa chỉ truy cập | Ghi chú |
+| :--- | :--- | :--- |
+| **UniRequest Portal (Giao diện chính)** | <http://localhost:3000> | Điểm vào chính của người dùng (Nginx tự proxy `/api` và `/auth`) |
+| **Kestra Workflow Engine UI** | <http://localhost:8085> | `admin@unirequest.edu.vn` / `KestraAdmin2026!` |
+| **Keycloak Admin Console** | <http://localhost:8080> | Tài khoản `KC_ADMIN_USER` / `KC_ADMIN_PASSWORD` trong `.env` |
+| **MinIO S3 Console** | <http://localhost:9001> | Tài khoản `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` trong `.env` |
+| **Kiểm tra sức khỏe API (qua Kong)** | <http://localhost:8000/api/health> | Kong Gateway chỉ định tuyến `/api/*` và `/auth/*` *(cổng gốc `/` không mở UI)* |
 
 ---
 

@@ -154,6 +154,23 @@
       "groups": ["/Lớp/K11A1"]
     },
     {
+      "username": "sinhvien2",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Hào Quang",
+      "lastName": "Nguyễn",
+      "email": "sinhvien2@unirequest.edu.vn",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "1234567",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["sinhvien"],
+      "groups": ["/Lớp/k11A2"]
+    },
+    {
       "username": "canbo",
       "enabled": true,
       "emailVerified": true,
