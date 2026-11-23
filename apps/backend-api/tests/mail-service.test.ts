@@ -5,6 +5,7 @@ import {
   escapeHtml,
   MailService,
   resolveEmailRecipients,
+  resolveStrictDepartmentEmails,
 } from '../src/services/mail-service.js';
 
 describe('MailService - Gmail SMTP cho Kestra SLA Watchdog & Daily Report', () => {
@@ -100,5 +101,73 @@ describe('MailService - Gmail SMTP cho Kestra SLA Watchdog & Daily Report', () =
     expect(dailyRes.sent).toBe(true);
     expect(dailyRes.recipients).toEqual(['bgh@gmail.com']);
     expect(mockSendMail).toHaveBeenCalledTimes(2);
+  });
+
+  it('sendDepartmentDailyReportEmail chỉ gửi riêng số liệu Ban tới email thật trên Keycloak, không fallback sang Admin', async () => {
+    expect(
+      resolveStrictDepartmentEmails([
+        'canbo@unirequest.edu.vn',
+        'ctsv.staff@gmail.com',
+        'CTSV.STAFF@gmail.com',
+      ])
+    ).toEqual(['ctsv.staff@gmail.com']);
+
+    const mockSendMail = vi.fn().mockResolvedValue({ messageId: 'dept-msg-1' });
+    const fakeTransporter = { sendMail: mockSendMail } as unknown as Transporter;
+    const svc = new MailService(fakeTransporter);
+
+    // Không có email thật trên Keycloak -> bỏ qua an toàn, không gửi nhầm về Admin
+    const skippedRes = await svc.sendDepartmentDailyReportEmail({
+      department: 'CTSV',
+      stats: {
+        target_department: 'CTSV',
+        total_requests: 5,
+        pending_count: 1,
+        approved_count: 4,
+        rejected_count: 0,
+        urgent_count: 0,
+        avg_resolution_hours: 2.1,
+      },
+      pendingItems: [],
+      keycloakEmails: ['canbo@unirequest.edu.vn'],
+    });
+    expect(skippedRes.sent).toBe(false);
+    expect(skippedRes.skipped).toBe(true);
+    expect(skippedRes.reason).toBe('NO_DEPARTMENT_REAL_EMAIL');
+    expect(mockSendMail).not.toHaveBeenCalled();
+
+    // Có email thật trên Keycloak -> gửi riêng cho đúng Ban kèm đơn chờ duyệt
+    const sentRes = await svc.sendDepartmentDailyReportEmail({
+      department: 'KETOAN',
+      stats: {
+        target_department: 'KETOAN',
+        total_requests: 6,
+        pending_count: 1,
+        approved_count: 5,
+        rejected_count: 0,
+        urgent_count: 1,
+        avg_resolution_hours: 1.8,
+      },
+      pendingItems: [
+        {
+          id: 'req-1',
+          title: 'Gia hạn học phí <HK2>',
+          created_by: 'sinhvien',
+          sender_group: 'K11A1',
+          priority: 'URGENT',
+          hours_pending: 3.4,
+        },
+      ],
+      keycloakEmails: ['ketoan.real@gmail.com', 'giangvien@unirequest.edu.vn'],
+    });
+    expect(sentRes.sent).toBe(true);
+    expect(sentRes.recipients).toEqual(['ketoan.real@gmail.com']);
+    expect(mockSendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'ketoan.real@gmail.com',
+        subject: expect.stringContaining('[UniRequest - KETOAN]'),
+        html: expect.stringContaining('Gia hạn học phí &lt;HK2&gt;'),
+      })
+    );
   });
 });

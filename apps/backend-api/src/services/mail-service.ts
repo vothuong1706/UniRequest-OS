@@ -44,6 +44,23 @@ export interface DailyReportEmailPayload {
   extraRecipients?: string[];
 }
 
+export interface DepartmentPendingItem {
+  id: string;
+  title: string;
+  created_by: string;
+  sender_group?: string | null;
+  priority: string;
+  hours_pending: number;
+}
+
+export interface DepartmentDailyReportEmailPayload {
+  department: string;
+  stats: DailyReportDepartmentRow;
+  pendingItems: DepartmentPendingItem[];
+  keycloakEmails: string[];
+  executionId?: string | null;
+}
+
 const PLACEHOLDER_EMAIL_DOMAINS = new Set([
   'example.com',
   'example.org',
@@ -100,6 +117,31 @@ export function resolveEmailRecipients(
   }
   if (resolved.length === 0 && config.smtp.user) {
     addIfValid(config.smtp.user, false);
+  }
+
+  return resolved;
+}
+
+/**
+ * Lọc nghiêm ngặt danh sách email thật của riêng một Phòng ban trên Keycloak.
+ * Không fallback về SMTP_ALERT_TO hay SMTP_USER để bảo đảm cách ly dữ liệu
+ * theo phạm vi DEPARTMENT và không spam nhiều email lẻ về hộp thư Admin.
+ */
+export function resolveStrictDepartmentEmails(
+  keycloakEmails: readonly string[] = []
+): string[] {
+  const seen = new Set<string>();
+  const resolved: string[] = [];
+
+  for (const raw of keycloakEmails) {
+    const clean = raw.trim();
+    if (!clean || !isValidEmail(clean) || isPlaceholderEmail(clean)) {
+      continue;
+    }
+    const key = clean.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    resolved.push(clean);
   }
 
   return resolved;
@@ -382,6 +424,166 @@ export class MailService {
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.warn('[MailService] Gửi email báo cáo cuối ngày thất bại:', msg);
+      return {
+        sent: false,
+        skipped: false,
+        recipients,
+        reason: msg,
+      };
+    }
+  }
+
+  /**
+   * Báo cáo cuối ngày cấp Phòng ban (DEPARTMENT scope):
+   * Chỉ chứa số liệu và danh sách đơn tồn đọng của ĐÚNG phòng ban đó,
+   * chỉ gửi tới danh sách email thật của cán bộ thuộc Group phòng ban trên Keycloak.
+   */
+  async sendDepartmentDailyReportEmail(
+    payload: DepartmentDailyReportEmailPayload
+  ): Promise<MailDispatchResult> {
+    if (!this.isConfigured()) {
+      return {
+        sent: false,
+        skipped: true,
+        recipients: [],
+        reason: 'SMTP_NOT_CONFIGURED',
+      };
+    }
+
+    const recipients = resolveStrictDepartmentEmails(payload.keycloakEmails);
+    if (recipients.length === 0) {
+      return {
+        sent: false,
+        skipped: true,
+        recipients: [],
+        reason: 'NO_DEPARTMENT_REAL_EMAIL',
+      };
+    }
+
+    const transporter = this.getTransporter();
+    if (!transporter) {
+      return {
+        sent: false,
+        skipped: true,
+        recipients,
+        reason: 'TRANSPORTER_UNAVAILABLE',
+      };
+    }
+
+    const todayStr = new Intl.DateTimeFormat('vi-VN', {
+      timeZone: config.timezone,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date());
+
+    const deptLabel = payload.department.split('/').join(' / ');
+    const { stats } = payload;
+    const subject = `[UniRequest - ${deptLabel}] Báo cáo cuối ngày ${todayStr} (${stats.pending_count} chờ duyệt)`;
+    const portalUrl = config.smtp.appPublicUrl;
+
+    const pendingRowsHtml = payload.pendingItems
+      .slice(0, 5)
+      .map((item) => {
+        const sender = item.sender_group
+          ? `${item.created_by} (${item.sender_group})`
+          : item.created_by;
+        return `
+          <tr>
+            <td style="padding:7px 8px;border:1px solid #e5e7eb;">${escapeHtml(item.title)}</td>
+            <td style="padding:7px 8px;border:1px solid #e5e7eb;">${escapeHtml(sender)}</td>
+            <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;">${escapeHtml(item.priority)}</td>
+            <td style="padding:7px 8px;border:1px solid #e5e7eb;text-align:right;color:#b45309;">${Number(item.hours_pending).toFixed(1)}h</td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    const html = `
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#111827;line-height:1.5;">
+        <div style="background:#1e293b;color:#ffffff;padding:16px 20px;border-radius:8px 8px 0 0;">
+          <h2 style="margin:0;font-size:18px;">Báo cáo cuối ngày - ${escapeHtml(deptLabel)} (${escapeHtml(todayStr)})</h2>
+          <p style="margin:4px 0 0;font-size:13px;opacity:0.85;">Phạm vi riêng phòng ban (UniRequest-OS - Kestra Daily Report)</p>
+        </div>
+        <div style="border:1px solid #e5e7eb;border-top:none;padding:20px;border-radius:0 0 8px 8px;background:#ffffff;">
+          <table style="width:100%;border-collapse:collapse;margin-bottom:16px;text-align:center;">
+            <tr>
+              <td style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;"><div style="font-size:11px;color:#6b7280;">Tổng hồ sơ</div><div style="font-size:20px;font-weight:bold;">${stats.total_requests}</div></td>
+              <td style="padding:10px;border:1px solid #e5e7eb;background:#fffbeb;"><div style="font-size:11px;color:#b45309;">Chờ duyệt</div><div style="font-size:20px;font-weight:bold;color:#b45309;">${stats.pending_count}</div></td>
+              <td style="padding:10px;border:1px solid #e5e7eb;background:#ecfdf5;"><div style="font-size:11px;color:#047857;">Đã duyệt</div><div style="font-size:20px;font-weight:bold;color:#047857;">${stats.approved_count}</div></td>
+              <td style="padding:10px;border:1px solid #e5e7eb;background:#f9fafb;"><div style="font-size:11px;color:#6b7280;">Từ chối</div><div style="font-size:20px;font-weight:bold;">${stats.rejected_count}</div></td>
+            </tr>
+          </table>
+          <p style="font-size:13px;margin:0 0 12px;color:#374151;">
+            Đơn khẩn cấp: <strong>${stats.urgent_count}</strong> | Thời gian xử lý trung bình: <strong>${stats.avg_resolution_hours}h</strong>
+          </p>
+          ${
+            pendingRowsHtml
+              ? `<h3 style="font-size:14px;margin:14px 0 8px;">Danh sách hồ sơ đang chờ duyệt tại ${escapeHtml(deptLabel)}</h3>
+                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                   <thead>
+                     <tr style="background:#f3f4f6;">
+                       <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:left;">Tiêu đề</th>
+                       <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:left;">Người gửi</th>
+                       <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:center;">Ưu tiên</th>
+                       <th style="padding:7px 8px;border:1px solid #e5e7eb;text-align:right;">Đã chờ</th>
+                     </tr>
+                   </thead>
+                   <tbody>${pendingRowsHtml}</tbody>
+                 </table>`
+              : `<p style="font-size:13px;color:#047857;">Tuyệt vời! Hiện không còn hồ sơ nào đang chờ duyệt tại <strong>${escapeHtml(deptLabel)}</strong>.</p>`
+          }
+          <p style="margin:18px 0 0;">
+            <a href="${escapeHtml(portalUrl)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:bold;">Mở UniRequest-OS xử lý hồ sơ</a>
+          </p>
+          <p style="font-size:11px;color:#6b7280;margin-top:14px;margin-bottom:0;">
+            Báo cáo này chỉ tổng hợp dữ liệu thuộc phòng ban ${escapeHtml(deptLabel)} theo chuẩn cách ly dữ liệu Zero-Trust.
+          </p>
+        </div>
+      </div>
+    `.trim();
+
+    const text = [
+      `[UniRequest - ${deptLabel}] Báo cáo cuối ngày ${todayStr}`,
+      `- Tổng hồ sơ: ${stats.total_requests} (Chờ duyệt: ${stats.pending_count}, Đã duyệt: ${stats.approved_count}, Từ chối: ${stats.rejected_count})`,
+      `- Khẩn cấp: ${stats.urgent_count} | Thời gian xử lý TB: ${stats.avg_resolution_hours}h`,
+      ...(payload.pendingItems.length > 0
+        ? [
+            '- Hồ sơ đang chờ duyệt:',
+            ...payload.pendingItems
+              .slice(0, 5)
+              .map(
+                (i) =>
+                  `  + [${i.priority}] ${i.title} - ${i.created_by}${i.sender_group ? ` (${i.sender_group})` : ''} (chờ ${Number(i.hours_pending).toFixed(1)}h)`
+              ),
+          ]
+        : ['- Hiện không còn hồ sơ nào chờ duyệt.']),
+      `- Truy cập xử lý: ${portalUrl}`,
+    ].join('\n');
+
+    try {
+      const fromHeader = config.smtp.from
+        ? `UniRequest-OS <${config.smtp.from}>`
+        : config.smtp.user;
+      const info = await transporter.sendMail({
+        from: fromHeader,
+        to: recipients.join(', '),
+        subject,
+        text,
+        html,
+      });
+      return {
+        sent: true,
+        skipped: false,
+        recipients,
+        messageId: info.messageId,
+      };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `[MailService] Gửi email báo cáo riêng phòng ban ${deptLabel} thất bại:`,
+        msg
+      );
       return {
         sent: false,
         skipped: false,

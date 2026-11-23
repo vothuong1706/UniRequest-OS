@@ -10,6 +10,7 @@ const mockEmitRequestUpdated = vi.fn();
 const mockGetDepartmentMemberEmails = vi.fn();
 const mockSendSlaAlertEmail = vi.fn();
 const mockSendDailyReportEmail = vi.fn();
+const mockSendDepartmentDailyReportEmail = vi.fn();
 
 vi.mock('../src/config/database.js', () => ({
   query: (...args: unknown[]) => mockQuery(...args),
@@ -54,6 +55,8 @@ vi.mock('../src/services/mail-service.js', () => ({
     sendSlaAlertEmail: (...args: unknown[]) => mockSendSlaAlertEmail(...args),
     sendDailyReportEmail: (...args: unknown[]) =>
       mockSendDailyReportEmail(...args),
+    sendDepartmentDailyReportEmail: (...args: unknown[]) =>
+      mockSendDepartmentDailyReportEmail(...args),
   },
 }));
 
@@ -73,6 +76,7 @@ describe('POST /api/internal/kestra/sla-alert', () => {
     mockGetDepartmentMemberEmails.mockReset();
     mockSendSlaAlertEmail.mockReset();
     mockSendDailyReportEmail.mockReset();
+    mockSendDepartmentDailyReportEmail.mockReset();
     mockGetDepartmentMemberEmails.mockResolvedValue(['canbo@gmail.com']);
     mockSendSlaAlertEmail.mockResolvedValue({
       sent: true,
@@ -83,6 +87,11 @@ describe('POST /api/internal/kestra/sla-alert', () => {
       sent: true,
       skipped: false,
       recipients: ['admin@gmail.com'],
+    });
+    mockSendDepartmentDailyReportEmail.mockResolvedValue({
+      sent: true,
+      skipped: false,
+      recipients: ['canbo@gmail.com'],
     });
   });
 
@@ -229,8 +238,45 @@ describe('POST /api/internal/kestra/sla-alert', () => {
           urgent_count: 1,
           avg_resolution_hours: 4.5,
         },
+        {
+          target_department: 'CTSV',
+          total_requests: 4,
+          pending_count: 0,
+          approved_count: 4,
+          rejected_count: 0,
+          urgent_count: 0,
+          avg_resolution_hours: 2.0,
+        },
       ],
     });
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 'req-kt-1',
+          title: 'Tra soát học phí',
+          created_by: 'sinhvien',
+          sender_group: 'K11A1',
+          target_department: 'KETOAN',
+          priority: 'URGENT',
+          hours_pending: 3.5,
+        },
+      ],
+    });
+    mockGetDepartmentMemberEmails
+      .mockResolvedValueOnce(['ketoan@gmail.com'])
+      .mockResolvedValueOnce(['ctsv@unirequest.edu.vn']);
+    mockSendDepartmentDailyReportEmail
+      .mockResolvedValueOnce({
+        sent: true,
+        skipped: false,
+        recipients: ['ketoan@gmail.com'],
+      })
+      .mockResolvedValueOnce({
+        sent: false,
+        skipped: true,
+        recipients: [],
+        reason: 'NO_DEPARTMENT_REAL_EMAIL',
+      });
 
     const okRes = await request(app)
       .post('/api/internal/kestra/daily-report-notify')
@@ -247,12 +293,42 @@ describe('POST /api/internal/kestra/sla-alert', () => {
     expect(okRes.status).toBe(200);
     expect(okRes.body).toMatchObject({
       success: true,
+      department_sent_count: 1,
+      department_reports: [
+        {
+          department: 'KETOAN',
+          sent: true,
+          skipped: false,
+          recipients_count: 1,
+        },
+        {
+          department: 'CTSV',
+          sent: false,
+          skipped: true,
+          recipients_count: 0,
+          reason: 'NO_DEPARTMENT_REAL_EMAIL',
+        },
+      ],
       email: {
         sent: true,
         skipped: false,
         recipients_count: 1,
       },
     });
+    expect(mockSendDepartmentDailyReportEmail).toHaveBeenCalledTimes(2);
+    expect(mockSendDepartmentDailyReportEmail).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        department: 'KETOAN',
+        keycloakEmails: ['ketoan@gmail.com'],
+        pendingItems: [
+          expect.objectContaining({
+            id: 'req-kt-1',
+            title: 'Tra soát học phí',
+          }),
+        ],
+      })
+    );
     expect(mockSendDailyReportEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         totalActive: 22,

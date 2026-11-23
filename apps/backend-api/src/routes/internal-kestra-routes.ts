@@ -7,6 +7,7 @@ import { emitRequestUpdated } from '../realtime/socket-server.js';
 import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import {
   DailyReportDepartmentRow,
+  DepartmentPendingItem,
   MailDispatchResult,
   mailService,
 } from '../services/mail-service.js';
@@ -225,11 +226,89 @@ internalKestraRouter.post('/daily-report-notify', async (req, res, next) => {
     );
     const departmentBreakdown = (breakdownRes.rows || []) as DailyReportDepartmentRow[];
 
+    // Truy vấn danh sách đơn đang PENDING để đính kèm trong báo cáo riêng từng Ban
+    const pendingRes = await query(
+      `SELECT
+         id,
+         title,
+         created_by,
+         sender_group,
+         target_department,
+         COALESCE(priority, 'NORMAL') AS priority,
+         ROUND(EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0, 1)::float AS hours_pending
+       FROM requests
+       WHERE hidden_by_receiver = FALSE
+         AND status = 'PENDING'
+         AND target_department IS NOT NULL
+       ORDER BY
+         CASE priority WHEN 'URGENT' THEN 3 WHEN 'HIGH' THEN 2 ELSE 1 END DESC,
+         created_at ASC;`
+    );
+    const pendingByDepartment = new Map<string, DepartmentPendingItem[]>();
+    for (const row of pendingRes.rows || []) {
+      const dept = String(row.target_department || '').trim();
+      if (!dept) continue;
+      const list = pendingByDepartment.get(dept) || [];
+      if (list.length < 5) {
+        list.push({
+          id: String(row.id),
+          title: String(row.title || ''),
+          created_by: String(row.created_by || ''),
+          sender_group: row.sender_group ? String(row.sender_group) : null,
+          priority: String(row.priority || 'NORMAL'),
+          hours_pending: Number(row.hours_pending || 0),
+        });
+        pendingByDepartment.set(dept, list);
+      }
+    }
+
+    // Tầng 1 (DEPARTMENT scope): gửi báo cáo riêng cho từng Ban tới đúng email thật của cán bộ Ban trên Keycloak
+    const departmentReports: Array<{
+      department: string;
+      sent: boolean;
+      skipped: boolean;
+      recipients_count: number;
+      reason?: string;
+    }> = [];
+
+    for (const deptRow of departmentBreakdown) {
+      const deptName = deptRow.target_department;
+      if (!deptName || deptName === 'Chưa phân tuyến') continue;
+
+      let keycloakEmails: string[] = [];
+      try {
+        keycloakEmails =
+          await keycloakGroupService.getDepartmentMemberEmails(deptName);
+      } catch (err) {
+        console.warn(
+          `[Kestra DailyReport] Không lấy được email Keycloak cho Ban ${deptName}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+
+      const deptResult = await mailService.sendDepartmentDailyReportEmail({
+        department: deptName,
+        stats: deptRow,
+        pendingItems: pendingByDepartment.get(deptName) || [],
+        keycloakEmails,
+        executionId: typeof body.execution_id === 'string' ? body.execution_id : null,
+      });
+
+      departmentReports.push({
+        department: deptName,
+        sent: deptResult.sent,
+        skipped: deptResult.skipped,
+        recipients_count: deptResult.recipients.length,
+        reason: deptResult.reason,
+      });
+    }
+
     const totalActive = Number(body.total_active ?? 0);
     const totalPending = Number(body.total_pending ?? 0);
     const totalApproved = Number(body.total_approved ?? 0);
     const totalRejected = Number(body.total_rejected ?? 0);
 
+    // Tầng 2 (ALL scope - Ban Giám hiệu / Quản trị): gửi bản tổng hợp toàn trường về SMTP_ALERT_TO
     const emailResult = await mailService.sendDailyReportEmail({
       totalActive: Number.isFinite(totalActive) ? totalActive : 0,
       totalPending: Number.isFinite(totalPending) ? totalPending : 0,
@@ -242,6 +321,8 @@ internalKestraRouter.post('/daily-report-notify', async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      department_reports: departmentReports,
+      department_sent_count: departmentReports.filter((r) => r.sent).length,
       email: {
         sent: emailResult.sent,
         skipped: emailResult.skipped,
