@@ -30,6 +30,7 @@ docs/*.md
 !docs/README.md
 !docs/architecture.md
 !docs/operations.md
+!docs/hoi-dap-hoi-dong.md
 !docs/uml.md
 BAOCAO/
 *.docx

@@ -8,6 +8,7 @@ Tài liệu kỹ thuật của **UniRequest-OS** được tổ chức tối gi�
 2. **Dùng thử trên giao diện (2 phút):** Sau `make build`, mở <http://localhost:3000> với 4 tài khoản mẫu tách phạm vi (`sinhvien`, `sinhvien2`, `canbo`, `giangvien`) trong [`README.md`](../README.md#tài-khoản-kiểm-thử-configkeycloakrealm-exportjson).
 3. **Kiến trúc 3 tầng DX-OS & Mô hình dữ liệu:** [`architecture.md`](architecture.md) và [`uml.md`](uml.md).
 4. **Vận hành, Workflow Kestra & Bằng chứng kiểm thử:** [`operations.md`](operations.md).
+5. **Hỏi - Đáp kỹ thuật với Hội đồng (10 câu trọng tâm):** [`hoi-dap-hoi-dong.md`](hoi-dap-hoi-dong.md).
 
 ## 2. Tìm gì ở đâu (Ánh xạ Tiêu chí PoF / OLP PMNM 2026)
 
@@ -20,6 +21,7 @@ Tài liệu kỹ thuật của **UniRequest-OS** được tổ chức tối gi�
 | **Kiến trúc 3 tầng DX-OS & `H-P-D-I`** | [`architecture.md`](architecture.md), [`uml.md`](uml.md), [`docs/images/architecture.png`](images/architecture.png) | Kiểm tra `docs/images/*.svg` trong [CI](../.github/workflows/ci.yml) |
 | **Quy trình, Demo & Bằng chứng Test** | [`operations.md`](operations.md), [`scripts/test-e2e.sh`](../scripts/test-e2e.sh) | `make unit-test` (`42/42`), `make lint`, `make test` (`7/7`) |
 | **Demo Internet HTTPS & Sao lưu** | [`operations.md`](operations.md#1-triển-khai-máy-sạch--internet-https), [`scripts/internet-demo.sh`](../scripts/internet-demo.sh) | `bash scripts/internet-demo.sh`, `make backup && make restore` |
+| **Hỏi - Đáp Hội đồng Chung kết** | [`hoi-dap-hoi-dong.md`](hoi-dap-hoi-dong.md) | 10 câu hỏi trọng tâm kèm bằng chứng đường dẫn & unit test |
 | **Tài nguyên hình ảnh & AI** | [`images/README.md`](images/README.md), [`NOTICE`](../NOTICE) | Minh bạch toàn bộ ảnh chụp thật & phần dùng AI |
 
 ## 3. Tự kiểm chuẩn PoF trước ngày chấm
