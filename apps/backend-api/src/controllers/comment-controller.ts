@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Request, Response, NextFunction } from 'express';
 import { emitRequestUpdated, emitToStaff, emitToUser } from '../realtime/socket-server.js';
 import { commentService } from '../services/comment-service.js';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 /**

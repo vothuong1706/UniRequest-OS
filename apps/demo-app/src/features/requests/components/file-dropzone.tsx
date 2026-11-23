@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';

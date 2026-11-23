@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import http from 'http';
 import { createApp } from './app.js';
 import { config } from './config/environment.js';
@@ -6,6 +7,7 @@ import { initMinioBucket } from './config/minio-client.js';
 import { getKeycloakPublicKey } from './middlewares/auth-middleware.js';
 import { initSocketServer } from './realtime/socket-server.js';
 import { requestService } from './services/request-service.js';
+import { seedDemoDataIfEmpty } from './utils/seed-demo-data.js';
 
 const startServer = async () => {
   console.log('='.repeat(60));
@@ -13,10 +15,11 @@ const startServer = async () => {
   console.log(`🌍 Môi trường: ${config.nodeEnv}`);
   console.log('='.repeat(60));
 
-  // 1. Kiểm tra kết nối PostgreSQL và khởi tạo bảng nếu cần
+  // 1. Kiểm tra kết nối PostgreSQL, đồng bộ schema & tự động nạp dữ liệu mẫu nếu máy sạch
   const isDbConnected = await checkDatabaseConnection();
   if (isDbConnected) {
     await ensureTablesExist();
+    await seedDemoDataIfEmpty();
     await requestService.backfillAuditHashChain();
   } else {
     console.warn('⚠️  Cảnh báo: Chưa thể kết nối PostgreSQL. Backend sẽ tiếp tục chạy và thử lại khi có request.');

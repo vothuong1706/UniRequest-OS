@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
 import http from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import { isAllowedCorsOrigin } from '../app.js';
 import { verifyKeycloakJwt } from '../middlewares/auth-middleware.js';
 import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { resolveRequestAccessScope } from '../services/request-service.js';
@@ -31,7 +33,9 @@ export const initSocketServer = (httpServer: http.Server): SocketIOServer => {
   const io = new SocketIOServer(httpServer, {
     path: '/api/socket.io',
     cors: {
-      origin: true,
+      origin: (origin, callback) => {
+        callback(null, isAllowedCorsOrigin(origin));
+      },
       credentials: true,
     },
     transports: ['websocket', 'polling'],

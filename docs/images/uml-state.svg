@@ -55,7 +55,7 @@
   <rect x="650" y="210" width="250" height="82" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
   <text x="775" y="241" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#991b1b">REJECTED (Từ chối)</text>
   <line x1="650" y1="253" x2="900" y2="253" stroke="#dc2626" stroke-width="1"/>
-  <text x="775" y="275" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#7f1d1d">Bắt buộc review_note (Poka-yoke)</text>
+  <text x="775" y="275" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#7f1d1d">Bắt buộc nhập review_note</text>
 
   <rect x="460" y="340" width="440" height="90" rx="10" fill="#f1f5f9" stroke="#475569" stroke-width="1.8"/>
   <text x="680" y="368" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="14" font-weight="bold" fill="#0f172a">SOFT-DELETED (Ẩn Độc lập 2 Phía)</text>

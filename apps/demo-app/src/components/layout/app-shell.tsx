@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, type ReactNode } from 'react';
 import { ChevronRight, PanelLeft, Plus } from 'lucide-react';
 import type { KeycloakProfile } from '@/auth/keycloak';

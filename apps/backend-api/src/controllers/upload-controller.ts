@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Request, Response, NextFunction } from 'express';
+import { verifyKeycloakJwt } from '../middlewares/auth-middleware.js';
 import { storageService } from '../services/storage-service.js';
+import {
+  signAttachmentUrl,
+  verifyAttachmentSignature,
+} from '../utils/attachment-signing.js';
 import { validateUploadedFileBuffer } from '../utils/file-security.js';
 
 export class UploadController {
   /**
    * POST /api/upload
-   * Kiểm dịch Magic Bytes trong RAM và tải tệp tin lên MinIO
+   * Kiểm dịch Magic Bytes trong RAM và tải tệp tin lên MinIO (Private bucket)
    */
   async uploadFile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -32,12 +38,13 @@ export class UploadController {
       }
 
       const uploadResult = await storageService.uploadFile(req.file);
+      const signedUrl = signAttachmentUrl(uploadResult.url) || uploadResult.url;
 
       res.status(201).json({
         success: true,
         message: 'Tải tệp đính kèm thành công.',
         data: {
-          url: uploadResult.url,
+          url: signedUrl,
           filename: uploadResult.objectName,
           original_name: uploadResult.originalName,
           size: uploadResult.size,
@@ -51,16 +58,46 @@ export class UploadController {
 
   /**
    * GET /api/upload/files/:objectName
-   * Phục vụ tệp đính kèm từ MinIO qua Same-Origin Proxy
+   * Phục vụ tệp đính kèm từ MinIO Private Bucket qua Same-Origin Proxy.
+   * Yêu cầu chữ ký HMAC ngắn hạn (?exp=...&sig=...) HOẶC Bearer JWT hợp lệ.
    */
   async streamFile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { objectName } = req.params;
+      const hasValidSignature = verifyAttachmentSignature(
+        objectName,
+        req.query.exp,
+        req.query.sig
+      );
+
+      if (!hasValidSignature) {
+        const authHeader = req.headers.authorization;
+        let hasValidJwt = false;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          try {
+            await verifyKeycloakJwt(authHeader.substring(7).trim());
+            hasValidJwt = true;
+          } catch {
+            hasValidJwt = false;
+          }
+        }
+
+        if (!hasValidJwt) {
+          res.status(401).json({
+            success: false,
+            code: 'ATTACHMENT_AUTH_REQUIRED',
+            message:
+              'Liên kết tệp đính kèm thiếu chữ ký xác thực, không hợp lệ hoặc đã hết hạn.',
+          });
+          return;
+        }
+      }
+
       const { stream, contentType, size } = await storageService.getObjectStream(objectName);
 
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', String(size));
-      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Cache-Control', 'private, max-age=300');
       res.setHeader('X-Content-Type-Options', 'nosniff');
 
       stream.on('error', (streamError) => {

@@ -26,27 +26,46 @@ until curl -sf "$KONG_ADMIN_URL/status" >/dev/null 2>&1; do
 done
 
 # 1. Service & Route cho Keycloak SSO (/auth -> http://keycloak:8080/auth, strip_path=false)
-echo "[1/5] Upsert Service: keycloak-service -> http://keycloak:8080"
+echo "[1/6] Upsert Service: keycloak-service -> http://keycloak:8080"
 curl -sf -X PUT "$KONG_ADMIN_URL/services/keycloak-service" \
   --data "url=http://keycloak:8080" >/dev/null
 
-echo "[2/5] Upsert Route: keycloak-route (/auth, strip_path=false)"
+echo "[2/6] Upsert Route: keycloak-route (/auth, strip_path=false)"
 curl -sf -X PUT "$KONG_ADMIN_URL/services/keycloak-service/routes/keycloak-route" \
   --data "paths[]=/auth" \
   --data "strip_path=false" >/dev/null
 
 # 2. Service & Route cho Backend API (/api -> http://backend:4000, strip_path=false)
-echo "[3/5] Upsert Service: unirequest-backend -> http://backend:4000"
+echo "[3/6] Upsert Service: unirequest-backend -> http://backend:4000"
 curl -sf -X PUT "$KONG_ADMIN_URL/services/unirequest-backend" \
   --data "url=http://backend:4000" >/dev/null
 
-echo "[4/5] Upsert Route: api-route (/api, strip_path=false)"
+echo "[4/6] Upsert Route: api-route (/api, strip_path=false)"
 curl -sf -X PUT "$KONG_ADMIN_URL/services/unirequest-backend/routes/api-route" \
   --data "paths[]=/api" \
   --data "strip_path=false" >/dev/null
 
+# 2b. Chặn tuyến nội bộ /api/internal trên cổng Kong công khai (không phân biệt hoa/thường -> trả 403)
+echo "[5/6] Upsert Route chặn nội bộ: internal-block-route (~/[aA][pP][iI]/+[iI][nN][tT][eE][rR][nN][aA][lL](/|\$) -> HTTP 403)"
+curl -sf -X PUT "$KONG_ADMIN_URL/services/unirequest-backend/routes/internal-block-route" \
+  --data-urlencode 'paths[]=~/[aA][pP][iI]/+[iI][nN][tT][eE][rR][nN][aA][lL](/|$)' \
+  --data "regex_priority=200" \
+  --data "strip_path=false" >/dev/null
+
+INTERNAL_PLUGINS="$(curl -sf "$KONG_ADMIN_URL/routes/internal-block-route/plugins")"
+if ! echo "$INTERNAL_PLUGINS" | grep -q '"name":"request-termination"'; then
+  curl -sf -X POST "$KONG_ADMIN_URL/routes/internal-block-route/plugins" \
+    --data "name=request-termination" \
+    --data "config.status_code=403" \
+    --data "config.content_type=application/json; charset=utf-8" \
+    --data-urlencode 'config.body={"success":false,"code":"INTERNAL_ROUTE_BLOCKED","message":"Endpoint nội bộ không cho phép truy cập qua cổng công khai."}' >/dev/null
+  echo "  ✔ Đã bật plugin request-termination chặn /api/internal (HTTP 403)"
+else
+  echo "  ✔ Plugin request-termination chặn /api/internal đã được cấu hình sẵn"
+fi
+
 # 3. Bật plugin bảo vệ biên mạng & truy vết trên service unirequest-backend (idempotent)
-echo "[5/5] Kiểm tra & kích hoạt plugin biên mạng (rate-limiting, correlation-id)..."
+echo "[6/6] Kiểm tra & kích hoạt plugin biên mạng (rate-limiting, correlation-id)..."
 EXISTING_PLUGINS="$(curl -sf "$KONG_ADMIN_URL/services/unirequest-backend/plugins")"
 
 if ! echo "$EXISTING_PLUGINS" | grep -q '"name":"rate-limiting"'; then

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { ensureFreshToken } from '@/auth/keycloak';
 import { resolveServiceUrl } from '@/lib/runtime-urls';
 import type {

@@ -9,7 +9,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 SERVICE ?=
 
-.PHONY: help env up build down restart ps logs test smoke unit-test lint dev-fe dev-be backup restore clean
+.PHONY: help env up build down restart ps logs seed test smoke unit-test lint dev-fe dev-be backup restore release clean
 
 help: ## Hiển thị danh sách toàn bộ lệnh hỗ trợ
 	@echo "=============================================================="
@@ -47,6 +47,20 @@ ps: ## Xem trạng thái các container đang chạy
 logs: ## Xem log thời gian thực (mặc định tất cả; lọc bằng SERVICE=backend|frontend|kestra)
 	$(COMPOSE) logs -f --tail=100 $(SERVICE)
 
+seed: ## Nạp dữ liệu mẫu idempotent (15 danh mục, 18 yêu cầu rải 7 ngày, chuỗi SHA-256 hợp lệ 100%)
+	@if docker ps --format '{{.Names}}' | grep -qx 'unirequest-backend'; then \
+		$(COMPOSE) exec -T backend node dist/scripts/seed.js; \
+	else \
+		if [ -f .env ]; then set -a; . ./.env; set +a; fi; \
+		DB_HOST="$${DB_HOST:-127.0.0.1}" \
+		DB_PORT="$${DB_PORT:-5432}" \
+		DB_USER="$${DB_USER:-$${POSTGRES_USER:-keycloak}}" \
+		DB_PASSWORD="$${DB_PASSWORD:-$${POSTGRES_PASSWORD:-}}" \
+		DB_NAME="$${DB_NAME:-$${POSTGRES_DB:-keycloak}}" \
+		SEED_DATA_FILE="$(CURDIR)/config/seed/demo-data.json" \
+		npm --prefix apps/backend-api run seed; \
+	fi
+
 test: ## Chạy kịch bản kiểm thử E2E 7 bước (Kong, Keycloak, Backend, JWT 401, MinIO, Frontend, Kestra)
 	bash scripts/test-e2e.sh
 
@@ -64,9 +78,10 @@ lint: ## Kiểm tra Clean Code cho cả Frontend (tsc, eslint, prettier, build) 
 	cd apps/demo-app && npm run typecheck && npm run lint && npm run format:check && npm run build
 	@echo "🔍 [2/3] Kiểm tra Backend (apps/backend-api)..."
 	cd apps/backend-api && npm run build
-	@echo "🔍 [3/3] Kiểm tra cú pháp Docker Compose & Keycloak Realm JSON..."
+	@echo "🔍 [3/3] Kiểm tra cú pháp Docker Compose, Keycloak Realm JSON & Seed Data JSON..."
 	$(COMPOSE) --env-file .env.example config -q
 	python3 -m json.tool config/keycloak/realm-export.json >/dev/null
+	python3 -m json.tool config/seed/demo-data.json >/dev/null
 	@echo "✅ Toàn bộ kiểm tra Clean Code & Hạ tầng ĐẠT 100%!"
 
 dev-fe: ## Chạy Frontend Vite HMR cục bộ trên cổng 5173 (không đụng Docker Frontend :3000)
@@ -84,6 +99,11 @@ restore: ## Kiểm chứng bản sao lưu mới nhất (--dry-run mặc định;
 	else \
 		bash scripts/restore.sh --dry-run $(BACKUP_DIR); \
 	fi
+
+VERSION ?= 1.0.0
+
+release: ## Đóng gói bản phát hành định dạng mở (.tar.gz + .sha256) vào thư mục releases/
+	bash scripts/release.sh "$(VERSION)"
 
 clean: ## [NGUY HIỂM] Dừng hệ thống và xóa toàn bộ container, network, volume & dữ liệu DB cục bộ
 	@echo "⚠️  CẢNH BÁO: Thao tác này sẽ XÓA SẠCH Database (PostgreSQL, Kong, Kestra) và tệp MinIO!"

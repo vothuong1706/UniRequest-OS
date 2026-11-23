@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';

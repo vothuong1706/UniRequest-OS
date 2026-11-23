@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   formatDateTime,
@@ -72,5 +73,15 @@ describe('Same-Origin & Internet Attachment URL Resolution', () => {
         'https://unirequest.example.vn/api'
       )
     ).toBe('https://unirequest.example.vn/api/upload/files/123_abc_minhchung.png');
+
+    expect(
+      resolveAttachmentUrl('javascript:alert(1)', 'https://unirequest.example.vn/api')
+    ).toBeNull();
+    expect(
+      resolveAttachmentUrl(
+        'data:text/html,<script>alert(1)</script>',
+        'https://unirequest.example.vn/api'
+      )
+    ).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { query } from '../config/database.js';
 
 export interface RequestCommentRecord {

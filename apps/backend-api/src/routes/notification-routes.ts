@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Router } from 'express';
 import { notificationController } from '../controllers/notification-controller.js';
 import { authenticateToken } from '../middlewares/auth-middleware.js';

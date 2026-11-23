@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Router } from 'express';
 import { categoryRouter } from './category-routes.js';
 import { departmentRouter } from './department-routes.js';

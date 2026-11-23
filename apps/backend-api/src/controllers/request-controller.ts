@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Request, Response, NextFunction } from 'express';
 import {
   emitRequestUpdated,
@@ -17,12 +18,27 @@ import {
   extractPriorityFromDescription,
   workflowService,
 } from '../services/workflow-service.js';
+import {
+  signAttachmentUrl,
+  stripAttachmentSignature,
+} from '../utils/attachment-signing.js';
 import { verifyAuditChain } from '../utils/audit-hash-chain.js';
 import {
   RequestDeleteMode,
+  RequestEntity,
   RequestPriority,
   RequestStatus,
 } from '../types/request.js';
+
+function withSignedAttachment<T extends Pick<RequestEntity, 'attachment_url'>>(
+  item: T
+): T {
+  if (!item.attachment_url) return item;
+  return {
+    ...item,
+    attachment_url: signAttachmentUrl(item.attachment_url),
+  };
+}
 
 const VALID_PRIORITIES: readonly RequestPriority[] = [
   'NORMAL',
@@ -103,10 +119,27 @@ export class RequestController {
 
       const cleanDesc = stripPriorityPrefix(description);
 
+      const rawAttachment =
+        typeof attachment_url === 'string' ? attachment_url.trim() : '';
+      let canonicalAttachmentUrl: string | undefined;
+      if (rawAttachment) {
+        const normalized = stripAttachmentSignature(rawAttachment);
+        if (!normalized) {
+          res.status(400).json({
+            success: false,
+            code: 'INVALID_ATTACHMENT_URL',
+            message:
+              'Đường dẫn tệp đính kèm không hợp lệ. Vui lòng tải tệp qua cổng tải lên của hệ thống.',
+          });
+          return;
+        }
+        canonicalAttachmentUrl = normalized;
+      }
+
       // Kiểm tra quy tắc đính kèm động dựa trên cấu hình danh mục trong DB
       const requiresEvidence =
         matchedCategory?.requires_evidence || categoryCode === 'FACILITY';
-      if (requiresEvidence && !attachment_url && cleanDesc.length < 15) {
+      if (requiresEvidence && !canonicalAttachmentUrl && cleanDesc.length < 15) {
         res.status(400).json({
           success: false,
           code: 'EVIDENCE_REQUIRED',
@@ -163,7 +196,7 @@ export class RequestController {
           custom_category_label: cleanCustomLabel,
           target_department: resolvedDepartment.canonicalPath,
           priority,
-          attachment_url,
+          attachment_url: canonicalAttachmentUrl,
         },
         user.preferred_username,
         user.roles,
@@ -223,7 +256,7 @@ export class RequestController {
       res.status(201).json({
         success: true,
         message: 'Đã gửi yêu cầu thành công.',
-        data: newRequest,
+        data: withSignedAttachment(newRequest),
         workflow,
       });
     } catch (error) {
@@ -254,7 +287,7 @@ export class RequestController {
       res.status(200).json({
         success: true,
         count: requests.length,
-        data: requests,
+        data: requests.map((item) => withSignedAttachment(item)),
       });
     } catch (error) {
       next(error);
@@ -400,7 +433,7 @@ export class RequestController {
       res.status(200).json({
         success: true,
         data: {
-          ...existing,
+          ...withSignedAttachment(existing),
           audit_logs: auditLogs,
           audit_integrity: auditIntegrity,
           ai_insight: aiInsight,
@@ -560,7 +593,7 @@ export class RequestController {
           status === 'APPROVED'
             ? 'Đã phê duyệt yêu cầu.'
             : 'Đã cập nhật trạng thái yêu cầu.',
-        data: updatedRequest,
+        data: updatedRequest ? withSignedAttachment(updatedRequest) : null,
         workflow,
       });
     } catch (error) {

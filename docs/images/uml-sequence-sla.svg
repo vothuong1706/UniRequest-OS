@@ -80,7 +80,7 @@
         <rect x="390" y="282" width="1090" height="295" fill="none" stroke="#0f172a" stroke-width="1.8"/>
         <polygon points="390,282 448,282 448,300 438,308 390,308" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5"/>
         <text x="416" y="300" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">alt</text>
-        <text x="458" y="300" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">[Chưa có SLA_WARNING trong 6 giờ gần nhất]</text>
+        <text x="458" y="300" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">[Chưa có cảnh báo SLA_WARNING lặp lại gần đây]</text>
         <line x1="390" y1="515" x2="1480" y2="515" stroke="#0f172a" stroke-width="1.4" stroke-dasharray="6,4"/>
            <text x="402" y="533" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">[Đã cảnh báo gần đây (Chống spam)]</text>
       
@@ -106,7 +106,7 @@
 
         <line x1="710" y1="332" x2="430" y2="332" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
         <rect x="379.75" y="314" width="380.5" height="15" fill="#ffffff" opacity="0.92"/>
-        <text x="570" y="326" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">5</tspan> SELECT request_audit_logs kiểm tra SLA_WARNING 6h qua</text>
+        <text x="570" y="326" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">5</tspan> SELECT request_audit_logs tránh gửi cảnh báo SLA_WARNING lặp lại</text>
       
 
         <line x1="430" y1="358" x2="710" y2="358" stroke="#1e293b" stroke-width="1.4" stroke-dasharray="6,4" marker-end="url(#arrowOpen)"/>

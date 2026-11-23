@@ -102,7 +102,7 @@
   <rect x="762" y="212" width="142" height="134" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5" />
   <text x="833" y="232" text-anchor="middle" class="f title" fill="#1e40af">[D] Dữ liệu</text>
   <text x="833" y="254" text-anchor="middle" class="f tiny">Dashboard thống kê 7 ngày</text>
-  <text x="833" y="272" text-anchor="middle" class="f tiny">Sổ cái Audit SHA-256</text>
+  <text x="833" y="272" text-anchor="middle" class="f tiny">Lịch sử mã băm SHA-256</text>
   <text x="833" y="290" text-anchor="middle" class="f tiny">Kho tệp S3 an toàn</text>
   <text x="833" y="308" text-anchor="middle" class="f tiny">Xuất CSV báo cáo ngày</text>
   <text x="833" y="326" text-anchor="middle" class="f tiny">Xác minh toàn vẹn đơn</text>
@@ -138,14 +138,14 @@
 
   <!-- Row 2 of Tier 1 -->
   <rect x="464" y="522" width="184" height="82" rx="8" fill="#fef2f2" stroke="#ef4444" stroke-width="1.6" />
-  <text x="556" y="546" text-anchor="middle" class="f title">Trạm kiểm dịch tệp</text>
-  <text x="556" y="564" text-anchor="middle" class="f tiny">Magic Bytes trong RAM Buffer</text>
-  <text x="556" y="580" text-anchor="middle" class="f tiny">Chặn .exe, .svg, tệp giả mạo</text>
+  <text x="556" y="546" text-anchor="middle" class="f title">Kiểm tra chữ ký file</text>
+  <text x="556" y="564" text-anchor="middle" class="f tiny">Magic Bytes trong bộ nhớ RAM</text>
+  <text x="556" y="580" text-anchor="middle" class="f tiny">Chặn .exe, .svg, file đổi đuôi</text>
 
   <rect x="684" y="522" width="184" height="82" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" />
   <text x="776" y="546" text-anchor="middle" class="f title">PostgreSQL 16</text>
   <text x="776" y="564" text-anchor="middle" class="f tiny">OLTP 7 bảng nghiệp vụ</text>
-  <text x="776" y="580" text-anchor="middle" class="f tiny">Sổ cái SHA-256 (prev/entry hash)</text>
+  <text x="776" y="580" text-anchor="middle" class="f tiny">Lịch sử SHA-256 (prev/entry hash)</text>
 
   <rect x="904" y="522" width="146" height="82" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" />
   <text x="977" y="546" text-anchor="middle" class="f title">MinIO S3 (Silo)</text>
@@ -250,7 +250,7 @@
   <text x="480" y="793" class="f sub">Trí tuệ AI [I]</text>
 
   <rect x="590" y="782" width="14" height="14" rx="3" fill="#fef2f2" stroke="#ef4444" stroke-width="1.5" />
-  <text x="610" y="793" class="f sub">Kiểm dịch &amp; Tin cậy</text>
+  <text x="610" y="793" class="f sub">Kiểm tra File &amp; Mã băm</text>
 
   <rect x="755" y="782" width="14" height="14" rx="3" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
   <text x="775" y="793" class="f sub">Vận hành</text>

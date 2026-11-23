@@ -22,8 +22,12 @@ RUN npm ci --only=production
 COPY --from=builder /usr/src/app/dist ./dist
 COPY db ./db
 
+RUN chown -R node:node /usr/src/app
+
 ENV NODE_ENV=production
 ENV PORT=4000
+
+USER node
 
 EXPOSE 4000
 

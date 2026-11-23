@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+import crypto from 'crypto';
 import { Router } from 'express';
 import { query } from '../config/database.js';
 import { config } from '../config/environment.js';
@@ -8,6 +10,16 @@ import { requestService } from '../services/request-service.js';
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+function isValidKestraKey(provided: unknown, expected: string): boolean {
+  if (typeof provided !== 'string' || !provided || !expected) {
+    return false;
+  }
+  const a = Buffer.from(provided, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 export const internalKestraRouter = Router();
 
 /**
@@ -17,10 +29,7 @@ export const internalKestraRouter = Router();
 internalKestraRouter.post('/sla-alert', async (req, res, next) => {
   try {
     const providedKey = req.headers['x-kestra-key'];
-    if (
-      typeof providedKey !== 'string' ||
-      providedKey !== config.kestra.webhookKey
-    ) {
+    if (!isValidKestraKey(providedKey, config.kestra.webhookKey)) {
       res.status(401).json({
         success: false,
         message: 'Unauthorized Kestra callback key.',

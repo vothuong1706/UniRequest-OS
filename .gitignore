@@ -32,12 +32,19 @@ docs/*.md
 !docs/operations.md
 !docs/hoi-dap-hoi-dong.md
 !docs/uml.md
+!docs/du-thi/
+!docs/du-thi/*.md
+!docs/research/
+!docs/research/*.md
+!docs/images/
+!docs/images/README.md
 BAOCAO/
 *.docx
 /images/
 /agency-agents/
 .agents/
 /backups/
+/releases/
 
 # IDE & Hệ điều hành
 .vscode/

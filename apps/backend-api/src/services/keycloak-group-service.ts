@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { config } from '../config/environment.js';
 import { DepartmentGroupItem } from '../types/request.js';
 

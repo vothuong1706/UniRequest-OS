@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/environment.js';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { CheckCircle2, Clock, FileCheck2, KeyRound } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';

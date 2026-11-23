@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Request, Response, NextFunction } from 'express';
 import { keycloakGroupService } from '../services/keycloak-group-service.js';
 import { pushService, type PushSubscriptionInput } from '../services/push-service.js';

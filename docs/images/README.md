@@ -1,6 +1,6 @@
-# Tài nguyên Hình ảnh & Sơ đồ (`docs/images/`)
+# Danh mục Hình ảnh, Sơ đồ & Ảnh chụp Thực tế (`docs/images/`)
 
-Toàn bộ tài nguyên hình ảnh, sơ đồ vector và ảnh chụp màn hình trong thư mục này phục vụ trực quan hóa hệ thống **UniRequest-OS** và được phát hành kèm theo giấy phép **Apache License 2.0** cùng tệp [`NOTICE`](../../NOTICE) của kho mã nguồn.
+Toàn bộ tài nguyên hình ảnh, sơ đồ kiến trúc và 12 ảnh chụp màn hình trong thư mục này phục vụ minh họa cho dự án **UniRequest-OS: Nền tảng Quản lý Yêu cầu Đại học (Student Request Management)** và được phát hành kèm theo giấy phép **Apache License 2.0** cùng tệp [`NOTICE`](../../NOTICE) của kho mã nguồn.
 
 ## 1. Hình ảnh minh họa & Sơ đồ kiến trúc (có sử dụng công cụ AI hỗ trợ)
 
@@ -9,7 +9,7 @@ Toàn bộ tài nguyên hình ảnh, sơ đồ vector và ảnh chụp màn hìn
 | `logo-3d.png` | PNG trong suốt | Biểu tượng kính 3D chính thức của UniRequest-OS, tạo bằng công cụ AI tạo ảnh theo mô tả của nhóm (dùng cho Portal, Favicon và README) |
 | `banner.jpg` | JPG (16:9) | Ảnh bìa minh họa cổng dịch vụ đại học kết nối lõi nguồn mở, tạo bằng công cụ AI tạo ảnh |
 | `hpdi-overview.jpg` | JPG (16:9) | Infographic 4 không gian H -> P -> D -> I, tạo bằng công cụ AI tạo ảnh |
-| `architecture-animated.svg` | Animated SVG | Sơ đồ kiến trúc 3 tầng DX-OS có chấm chuyển động, vẽ bằng mã SVG với sự hỗ trợ của AI dựa trên bố cục tham khảo từ dự án **Signet (HIT-Champion)** nhưng phản ánh đúng 100% thành phần thật của UniRequest-OS |
+| `architecture-animated.svg` | Animated SVG | Sơ đồ kiến trúc 3 tầng DX-OS có chấm chuyển động theo 4 không gian `H-P-D-I`, vẽ bằng mã SVG với sự hỗ trợ của AI và phản ánh đúng 100% thành phần thật của UniRequest-OS |
 | `architecture.png` | PNG | Ảnh tĩnh xuất từ `architecture-animated.svg` dùng cho tài liệu ngoại tuyến và báo cáo |
 | `workflow-animated.svg` | Animated SVG | Sơ đồ động 5 bước quy trình xử lý yêu cầu, vẽ bằng mã SVG với sự hỗ trợ của AI |
 | `uml-*.svg` | SVG | 6 sơ đồ UML 2.x BCE (Use Case, Sequence Lifecycle, Sequence SLA, State Machine, Class, Deployment) sinh từ mã Mermaid/SVG với sự hỗ trợ của AI |
@@ -25,6 +25,7 @@ Toàn bộ ảnh trong `docs/images/screenshots/` (đồng bộ từ thư mục 
 | `GiaoDienLogin.png` | Giao diện đăng nhập tối giản với Logo 3D của UniRequest Portal |
 | `LoginKeyCloak.png` | Màn hình xác thực tập trung Keycloak 26.0 OIDC PKCE `S256` |
 | `Accouts.png` | Quản trị vai trò Realm Roles (`sinhvien`, `canbo`, `giangvien`) trên Keycloak |
+| `TaoYeuCau.png` | Biểu mẫu Tạo yêu cầu mới tích hợp Trợ lý phân tuyến AI `[I]` và đồng bộ Phòng ban từ Keycloak |
 | `SinhVien_K11A1.png` | Cổng Sinh viên thuộc `/Lớp/K11A1` chỉ xem đơn cá nhân |
 | `SinhVien_K11A2.png` | Cổng Sinh viên thuộc `/Lớp/k11A2` cách ly hoàn toàn dữ liệu |
 | `CTSV_Group.png` | Cổng Cán bộ thuộc Group `CTSV` độc lập phạm vi dữ liệu |

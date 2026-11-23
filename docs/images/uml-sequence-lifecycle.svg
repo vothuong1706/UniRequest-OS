@@ -130,7 +130,7 @@
       
 
           <path d="M 825 334 L 871 334 L 871 358 L 827 358" fill="none" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>
-          <text x="879" y="349" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">7</tspan> verifyKeycloakJwt() &amp; validateGroup + Poka-yoke</text>
+          <text x="879" y="349" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12" fill="#0f172a"><tspan font-weight="bold">7</tspan> verifyKeycloakJwt() &amp; validateGroup + Kiểm tra đầu vào</text>
         
 
         <line x1="825" y1="384" x2="1070" y2="384" stroke="#1e293b" stroke-width="1.4" marker-end="url(#arrowSolid)"/>

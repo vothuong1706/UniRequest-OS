@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type RequestPriority = 'NORMAL' | 'HIGH' | 'URGENT';

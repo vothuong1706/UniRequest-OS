@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Múi giờ chuẩn Đông Dương (+07:00 - Hà Nội / Bangkok / TP.HCM)
 export const APP_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
@@ -63,19 +64,30 @@ export function resolveAttachmentUrl(
   apiBaseUrl: string
 ): string | null {
   if (!url) return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
 
   const apiOrigin = resolveApiOrigin(apiBaseUrl);
 
-  if (url.startsWith('/api/')) {
-    return `${apiOrigin}${url}`;
+  if (trimmed.startsWith('/api/')) {
+    return `${apiOrigin}${trimmed}`;
   }
 
-  const legacyMinioMatch = url.match(
+  const legacyMinioMatch = trimmed.match(
     /^https?:\/\/(?:localhost|127\.0\.0\.1|minio):9000\/[^/]+\/(.+)$/i
   );
   if (legacyMinioMatch?.[1]) {
     return `${apiOrigin}/api/upload/files/${legacyMinioMatch[1]}`;
   }
 
-  return url;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return trimmed;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }

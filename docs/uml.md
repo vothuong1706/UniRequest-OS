@@ -1,6 +1,6 @@
-# Tài liệu Sơ đồ UML 2.x Chi tiết - UniRequest-OS
+# Bộ Sơ đồ UML 2.x của Hệ thống - UniRequest-OS
 
-Tài liệu này lưu trữ trọn bộ sơ đồ UML 2.x theo ký hiệu chuẩn BCE (*Boundary - Control - Entity*) của nền tảng **UniRequest-OS** nhằm giữ cho `README.md` gọn gàng, tập trung vào tổng quan kiến trúc và vận hành sản phẩm.
+Tài liệu này lưu trữ trọn bộ 6 sơ đồ UML 2.x theo ký hiệu chuẩn BCE (*Boundary - Control - Entity*) của dự án **UniRequest-OS: Nền tảng Quản lý Yêu cầu Đại học (Student Request Management)** nhằm giữ cho `README.md` gọn gàng, dễ theo dõi.
 
 ---
 
@@ -12,7 +12,7 @@ Tài liệu này lưu trữ trọn bộ sơ đồ UML 2.x theo ký hiệu chuẩ
 
 ## 2. UML Sequence Diagram (Chuẩn BCE)
 
-### 2.1. Luồng Tạo yêu cầu, AI Triage [I], Kiểm dịch tệp, Kestra & Thông báo Realtime
+### 2.1. Luồng Tạo yêu cầu, Gợi ý phân loại AI [I], Kiểm tra file tải lên, Kestra & Thông báo Realtime
 
 ![UML Sequence Diagram chuẩn BCE: Tạo yêu cầu, Định tuyến Phòng ban, Kestra & Thông báo Realtime](images/uml-sequence-lifecycle.svg)
 
@@ -35,7 +35,7 @@ sequenceDiagram
 
     opt Yeu cau AI goi y phan tuyen [I]
         FE->>+KONG: POST /api/requests/ai-suggest (title, description)
-        KONG->>+CTRL: Verify Rate-Limit + X-Correlation-ID + JWT
+        KONG->>+CTRL: Verify Rate-Limit + X-Correlation-ID (Backend auth-middleware verify JWT RS256)
         CTRL->>+EXT: Ollama JSON / Local Semantic NLP Fallback
         EXT-->>-CTRL: suggested_department, category, priority, summary
         CTRL-->>-KONG: 200 OK + AiTriageSuggestion
@@ -44,15 +44,15 @@ sequenceDiagram
 
     opt Co tep dinh kem
         FE->>+KONG: POST /api/upload (Bearer JWT + file)
-        KONG->>+CTRL: Magic Bytes RAM Inspection (file-security.ts)
-        CTRL->>+EXT: putObject -> unirequest-files
-        EXT-->>-CTRL: 200 OK + /api/upload/files/:objectName
+        KONG->>+CTRL: Verify JWT RS256 + Magic Bytes RAM Inspection (file-security.ts)
+        CTRL->>+EXT: putObject -> unirequest-files (Private bucket)
+        EXT-->>-CTRL: 200 OK + Signed /api/upload/files/:objectName?exp&sig
         CTRL-->>-KONG: 201 Created + attachment_url
         KONG-->>-FE: 201 Created
     end
 
     FE->>+KONG: POST /api/requests (target_department, category, priority)
-    KONG->>+CTRL: Verify JWT + validateKeycloakGroup
+    KONG->>+CTRL: Forward + X-Correlation-ID (Backend verify JWT RS256 + validateKeycloakGroup)
     CTRL->>+SVC: createRequest(dto, createdBy, roles)
     SVC->>+PG: INSERT requests + request_audit_logs (SHA-256 chain)
     PG-->>-SVC: RequestEntity (UUID)

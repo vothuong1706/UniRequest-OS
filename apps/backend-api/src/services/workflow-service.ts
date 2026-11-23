@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { config } from '../config/environment.js';
 
 export type WorkflowEventType = 'request.created' | 'request.status_changed';

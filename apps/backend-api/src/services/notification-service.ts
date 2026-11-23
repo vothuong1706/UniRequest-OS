@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { query } from '../config/database.js';
 import { emitToStaff, emitToUser } from '../realtime/socket-server.js';
 import { RequestAccessScope } from '../types/request.js';

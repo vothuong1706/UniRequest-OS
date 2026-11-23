@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import webPush from 'web-push';
 import { query } from '../config/database.js';
 import { config } from '../config/environment.js';

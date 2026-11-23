@@ -68,7 +68,7 @@
 
   <rect x="275" y="664" width="880" height="110" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>
   <text x="290" y="684" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="13" font-weight="bold" fill="#1e3a8a">Phân hệ 5: Tự động hóa Kestra &amp; Thống kê</text>
-  <ellipse cx="445" cy="730" rx="145" ry="28" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="445" y="734" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" fill="#1e1b4b">UC-13: Cảnh báo SLA Watchdog (15p)</text>
+  <ellipse cx="445" cy="730" rx="145" ry="28" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="445" y="734" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" fill="#1e1b4b">UC-13: Cảnh báo SLA Watchdog định kỳ</text>
   <ellipse cx="765" cy="730" rx="140" ry="28" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="765" y="734" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" fill="#1e1b4b">UC-14: Xuất báo cáo CSV lên MinIO</text>
   <ellipse cx="1040" cy="730" rx="95" ry="28" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/><text x="1040" y="734" text-anchor="middle" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="12.5" fill="#1e1b4b">UC-15: Dashboard KPI</text>
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { describe, expect, it } from 'vitest';
 import {
   AUDIT_GENESIS_HASH,
@@ -54,8 +55,8 @@ function buildSignedChain(): VerifiableAuditEntry[] {
   ];
 }
 
-describe('SHA-256 Immutable Audit Ledger Verification', () => {
-  it('xác nhận chuỗi sổ cái nguyên vẹn khi không có sửa đổi trái phép', () => {
+describe('SHA-256 Audit History Chain Verification', () => {
+  it('xác nhận chuỗi lịch sử mã băm nguyên vẹn khi không có sửa đổi trái phép', () => {
     const chain = buildSignedChain();
     const res = verifyAuditChain(chain);
 

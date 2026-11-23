@@ -1,6 +1,7 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
 # ==============================================================================
-# UniRequest-OS - Verified Restore (PostgreSQL + MinIO Object Data)
+# UniRequest-OS - Verified Restore (3 PostgreSQL DBs + MinIO Object Data)
 # Hỗ trợ:
 #   bash scripts/restore.sh --dry-run [thư_mục_backup]  (Kiểm chứng checksum + giải nén thử)
 #   bash scripts/restore.sh <thư_mục_backup>            (Phục hồi dữ liệu thật)
@@ -37,6 +38,8 @@ fi
 
 PG_USER="${POSTGRES_USER:-keycloak}"
 PG_DB="${POSTGRES_DB:-keycloak}"
+KONG_USER="${KONG_PG_USER:-kong}"
+KONG_DB="${KONG_PG_DB:-kong}"
 
 echo "=================================================="
 echo "♻️  UniRequest-OS Restore Verification: ${TARGET_DIR}"
@@ -48,8 +51,10 @@ echo "[1/3] Kiểm tra chữ ký toàn vẹn SHA256SUMS..."
   sha256sum -c SHA256SUMS
 )
 
-echo "[2/3] Kiểm tra cấu trúc nén postgres.sql.gz & minio-data.tar.gz..."
+echo "[2/3] Kiểm tra cấu trúc nén các gói SQL & MinIO..."
 gzip -t "${TARGET_DIR}/postgres.sql.gz"
+[ -f "${TARGET_DIR}/kestra.sql.gz" ] && gzip -t "${TARGET_DIR}/kestra.sql.gz"
+[ -f "${TARGET_DIR}/kong.sql.gz" ] && gzip -t "${TARGET_DIR}/kong.sql.gz"
 tar -tzf "${TARGET_DIR}/minio-data.tar.gz" >/dev/null
 
 if [ "$DRY_RUN" = true ]; then
@@ -57,9 +62,15 @@ if [ "$DRY_RUN" = true ]; then
   exit 0
 fi
 
-echo "[3/3] Phục hồi PostgreSQL & MinIO..."
+echo "[3/3] Phục hồi PostgreSQL (chính, Kestra, Kong) & MinIO..."
 gzip -dc "${TARGET_DIR}/postgres.sql.gz" | docker exec -i unirequest-postgres psql -U "$PG_USER" -d "$PG_DB" >/dev/null
+if [ -f "${TARGET_DIR}/kestra.sql.gz" ]; then
+  gzip -dc "${TARGET_DIR}/kestra.sql.gz" | docker exec -i unirequest-postgres psql -U "$PG_USER" -d "kestra" >/dev/null
+fi
+if [ -f "${TARGET_DIR}/kong.sql.gz" ]; then
+  gzip -dc "${TARGET_DIR}/kong.sql.gz" | docker exec -i unirequest-kong-db psql -U "$KONG_USER" -d "$KONG_DB" >/dev/null
+fi
 mkdir -p config/minio/data
 tar -xzf "${TARGET_DIR}/minio-data.tar.gz" -C config/minio/data
 
-echo "✅ Phục hồi dữ liệu PostgreSQL & MinIO hoàn tất!"
+echo "✅ Phục hồi dữ liệu 3 CSDL & MinIO hoàn tất!"

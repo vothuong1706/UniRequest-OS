@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Badge } from '@/components/ui/badge';
 import type { RequestPriority, RequestStatus } from '../types';
 import { getPriorityLabel } from '../utils/priority';

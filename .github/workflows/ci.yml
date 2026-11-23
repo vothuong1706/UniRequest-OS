@@ -83,11 +83,12 @@ jobs:
           python3 - <<'PY'
           import json, os, re, xml.etree.ElementTree as ET, glob
 
-          # 1. Verify Apache-2.0 LICENSE exists
-          assert os.path.isfile('LICENSE'), 'Missing LICENSE file'
+          # 1. Verify Apache-2.0 LICENSE and core OSS governance docs exist
+          for req_file in ['LICENSE', 'NOTICE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md']:
+              assert os.path.isfile(req_file), f'Missing required OSS file: {req_file}'
           assert 'Apache License' in open('LICENSE', encoding='utf-8').read()
 
-          # 2. Validate Keycloak realm export JSON (roles, groups & OIDC groups mapper)
+          # 2. Validate Keycloak realm export JSON & external Seed Data JSON
           with open('config/keycloak/realm-export.json', encoding='utf-8') as f:
               realm = json.load(f)
           assert realm.get('realm') == 'unirequest'
@@ -96,6 +97,11 @@ jobs:
           assert portal_client, 'Missing unirequest-portal client'
           mappers = {m.get('protocolMapper') for m in portal_client.get('protocolMappers', [])}
           assert 'oidc-group-membership-mapper' in mappers, 'Missing oidc-group-membership-mapper'
+
+          with open('config/seed/demo-data.json', encoding='utf-8') as f:
+              seed = json.load(f)
+          assert len(seed.get('categories', [])) >= 10, 'Expected >= 10 seed categories'
+          assert len(seed.get('requests', [])) >= 15, 'Expected >= 15 seed requests'
 
           # 3. Validate all Kestra YAML workflows & PostgreSQL init sequence
           try:
@@ -135,14 +141,22 @@ jobs:
           for svg in svgs:
               ET.parse(svg)
 
-          # 5. Verify all relative image/file links in README.md exist
-          readme = open('README.md', encoding='utf-8').read()
-          paths = re.findall(r'(?:src|srcset)="([^"]+)"|\]\(([^)#]+)\)', readme)
-          for a, b in paths:
-              p = a or b
-              if p.startswith('http') or p.startswith('mailto:'):
-                  continue
-              assert os.path.exists(p), f'Broken README link: {p}'
+          # 5. Verify all relative image/file links in README.md and tracked docs/**/*.md exist
+          md_files = ['README.md'] + sorted(
+              p for p in glob.glob('docs/**/*.md', recursive=True)
+              if not p.startswith('docs/specs/')
+              and os.path.basename(p) not in {'DevOops.md', 'KEHOACH.md', 'TichHopDuAn.md', 'TongQuanDuAn.md'}
+          )
+          for doc in md_files:
+              base_dir = os.path.dirname(doc) or '.'
+              content = open(doc, encoding='utf-8').read()
+              paths = re.findall(r'(?:src|srcset)="([^"]+)"|\]\(([^)#]+)\)', content)
+              for a, b in paths:
+                  p = a or b
+                  if p.startswith('http') or p.startswith('mailto:') or p.startswith('#'):
+                      continue
+                  resolved = os.path.normpath(os.path.join(base_dir, p))
+                  assert os.path.exists(resolved), f'Broken link in {doc}: {p} -> {resolved}'
 
           print('ALL INFRA & OPEN-SOURCE COMPLIANCE CHECKS PASSED!')
           PY
@@ -152,3 +166,7 @@ jobs:
           sh -n kong-setup.sh
           sh -n scripts/kestra-setup.sh
           bash -n scripts/test-e2e.sh
+          bash -n scripts/backup.sh
+          bash -n scripts/restore.sh
+          bash -n scripts/internet-demo.sh
+          bash -n scripts/release.sh

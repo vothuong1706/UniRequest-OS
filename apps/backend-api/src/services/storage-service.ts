@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import crypto from 'crypto';
 import path from 'path';
 import { minioClient } from '../config/minio-client.js';

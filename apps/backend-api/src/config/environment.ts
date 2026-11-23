@@ -1,5 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
 import dotenv from 'dotenv';
-import path from 'path';
 
 // Nạp file cấu hình môi trường
 dotenv.config();
@@ -20,6 +20,12 @@ function deriveKeycloakBaseAndRealm(url: string): {
 
 const derivedKeycloak = deriveKeycloakBaseAndRealm(realmUrl);
 
+const parseOriginList = (raw?: string): string[] =>
+  (raw || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
@@ -29,7 +35,7 @@ export const config = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
     user: process.env.DB_USER || 'keycloak',
-    password: process.env.DB_PASSWORD || 'keycloak_dev_2026',
+    password: process.env.DB_PASSWORD || '',
     name: process.env.DB_NAME || 'keycloak',
   },
 
@@ -38,7 +44,7 @@ export const config = {
     adminUrl: process.env.KEYCLOAK_ADMIN_URL || derivedKeycloak.adminUrl,
     realm: process.env.KEYCLOAK_REALM || derivedKeycloak.realm,
     adminUser: process.env.KC_ADMIN_USER || 'admin',
-    adminPassword: process.env.KC_ADMIN_PASSWORD || 'admin_dev_2026',
+    adminPassword: process.env.KC_ADMIN_PASSWORD || '',
   },
 
   minio: {
@@ -46,9 +52,9 @@ export const config = {
     port: parseInt(process.env.MINIO_PORT || '9000', 10),
     useSSL: process.env.MINIO_USE_SSL === 'true',
     accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
-    secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin_dev_2026',
+    secretKey: process.env.MINIO_SECRET_KEY || '',
     bucketName: process.env.MINIO_BUCKET_NAME || 'unirequest-files',
-    publicUrl: process.env.MINIO_PUBLIC_URL || 'http://localhost:9000',
+    publicUrl: process.env.MINIO_PUBLIC_URL || '/api/upload/files',
   },
 
   kestra: {
@@ -56,18 +62,14 @@ export const config = {
     url: process.env.KESTRA_URL || 'http://kestra:8080',
     namespace: process.env.KESTRA_NAMESPACE || 'unirequest.dxos',
     flowId: process.env.KESTRA_FLOW_ID || 'unirequest-lifecycle',
-    webhookKey: process.env.KESTRA_WEBHOOK_KEY || 'unirequest-dxos-webhook-2026',
+    webhookKey: process.env.KESTRA_WEBHOOK_KEY || '',
     username: process.env.KESTRA_BASIC_AUTH_USER || 'admin@unirequest.edu.vn',
-    password: process.env.KESTRA_BASIC_AUTH_PASSWORD || 'KestraAdmin2026!',
+    password: process.env.KESTRA_BASIC_AUTH_PASSWORD || '',
   },
 
   vapid: {
-    publicKey:
-      process.env.VAPID_PUBLIC_KEY ||
-      'BGkWBKqEemsbPjB6VQpjJv9djzuxxk2evYSoNNcFzT3QkuQNrpd4IG9udE3KrkQsBzqgVNu8adhPukf1YocOXng',
-    privateKey:
-      process.env.VAPID_PRIVATE_KEY ||
-      'AVKU-Hy3zlWRpOxdXGK6pcTIUBiTzrA2XtGMyA2Hmz4',
+    publicKey: process.env.VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.VAPID_PRIVATE_KEY || '',
     subject: process.env.VAPID_SUBJECT || 'mailto:admin@unirequest.edu.vn',
   },
 
@@ -76,5 +78,19 @@ export const config = {
     ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
     ollamaModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b',
     timeoutMs: parseInt(process.env.AI_TIMEOUT_MS || '3500', 10),
+  },
+
+  security: {
+    corsAllowedOrigins: parseOriginList(process.env.CORS_ALLOWED_ORIGINS),
+    attachmentSigningSecret: process.env.ATTACHMENT_SIGNING_SECRET || '',
+    attachmentSignedUrlTtlSeconds: parseInt(
+      process.env.ATTACHMENT_SIGNED_URL_TTL_SECONDS || '3600',
+      10
+    ),
+  },
+
+  seed: {
+    enabled: process.env.SEED_DEMO_DATA !== 'false',
+    dataFile: process.env.SEED_DATA_FILE || '',
   },
 };

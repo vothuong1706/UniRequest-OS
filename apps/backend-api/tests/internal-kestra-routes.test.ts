@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -92,7 +93,7 @@ describe('POST /api/internal/kestra/sla-alert', () => {
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
   });
 
-  it('chống spam cảnh báo trùng trong vòng 6 giờ', async () => {
+  it('tránh gửi cảnh báo lặp lại cho cùng một đơn trong khoảng thời gian gần', async () => {
     mockGetRequestById.mockResolvedValueOnce({
       id: validId,
       title: 'Xin cấp bảng điểm',

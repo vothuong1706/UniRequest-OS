@@ -1,16 +1,48 @@
+// SPDX-License-Identifier: Apache-2.0
 import express, { Express } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { config } from './config/environment.js';
 import { apiRouter } from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middlewares/error-middleware.js';
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+];
+
+const TRYCLOUDFLARE_ORIGIN_REGEX = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/i;
+
+export function isAllowedCorsOrigin(origin?: string): boolean {
+  if (!origin) return true;
+  if (DEFAULT_ALLOWED_ORIGINS.includes(origin)) return true;
+  if (TRYCLOUDFLARE_ORIGIN_REGEX.test(origin)) return true;
+  if (config.security.corsAllowedOrigins.includes(origin)) return true;
+  return false;
+}
+
 export const createApp = (): Express => {
   const app = express();
 
-  // Bật CORS cho phép frontend kết nối (bao gồm PATCH cho toggle/read/hide)
+  app.disable('x-powered-by');
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    })
+  );
+
+  // Bật CORS kiểm soát theo danh sách origin hợp lệ (local dev, same-origin & trycloudflare HTTPS)
   app.use(
     cors({
-      origin: '*',
+      origin: (origin, callback) => {
+        if (isAllowedCorsOrigin(origin)) {
+          callback(null, true);
+          return;
+        }
+        callback(null, false);
+      },
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
     })

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
@@ -30,7 +31,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDateTime } from '@/lib/format';
+import { formatDateTime, resolveAttachmentUrl } from '@/lib/format';
+import { API_BASE_URL } from '@/services/api-client';
 import type {
   DepartmentGroupItem,
   RequestCategoryItem,
@@ -372,19 +374,25 @@ export function RequestListView({
                     </TableCell>
 
                     <TableCell className="whitespace-nowrap">
-                      {req.attachment_url ? (
-                        <a
-                          href={req.attachment_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs underline-offset-4 hover:underline"
-                        >
-                          <Paperclip className="size-3.5" />
-                          <span>Xem tệp</span>
-                        </a>
-                      ) : (
-                        <span className="text-muted-foreground text-xs"> - </span>
-                      )}
+                      {(() => {
+                        const attachmentHref = resolveAttachmentUrl(
+                          req.attachment_url,
+                          API_BASE_URL
+                        );
+                        return attachmentHref ? (
+                          <a
+                            href={attachmentHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs underline-offset-4 hover:underline"
+                          >
+                            <Paperclip className="size-3.5" />
+                            <span>Xem tệp</span>
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground text-xs"> - </span>
+                        );
+                      })()}
                     </TableCell>
 
                     <TableCell className="text-muted-foreground whitespace-nowrap text-xs tabular-nums">

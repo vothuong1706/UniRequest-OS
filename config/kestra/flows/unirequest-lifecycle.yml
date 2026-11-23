@@ -81,4 +81,4 @@ tasks:
 triggers:
   - id: unirequest_webhook
     type: io.kestra.plugin.core.trigger.Webhook
-    key: "unirequest-dxos-webhook-2026"
+    key: "{{ envs.webhook_key }}"

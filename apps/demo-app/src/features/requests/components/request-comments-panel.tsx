@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { Loader2, MessageSquare, Send } from 'lucide-react';
 import { toast } from 'sonner';

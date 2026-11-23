@@ -5,10 +5,22 @@
 # ==============================================================================
 set -eu
 
+if [ -f ./.env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . ./.env
+  set +a
+fi
+
 KESTRA_URL="${KESTRA_URL:-http://localhost:8085}"
 FLOWS_DIR="${FLOWS_DIR:-./config/kestra/flows}"
 KESTRA_USER="${KESTRA_BASIC_AUTH_USER:-admin@unirequest.edu.vn}"
-KESTRA_PASS="${KESTRA_BASIC_AUTH_PASSWORD:-KestraAdmin2026!}"
+KESTRA_PASS="${KESTRA_BASIC_AUTH_PASSWORD:-}"
+
+if [ -z "$KESTRA_PASS" ]; then
+  echo "❌ Thiếu biến môi trường KESTRA_BASIC_AUTH_PASSWORD (hãy tạo .env từ .env.example bằng lệnh: make env)"
+  exit 1
+fi
 
 echo "=================================================="
 echo "⚙️  Cấu hình Kestra Workflow Engine (UniRequest-OS)"

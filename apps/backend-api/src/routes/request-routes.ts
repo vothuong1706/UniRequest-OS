@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Router } from 'express';
 import { commentController } from '../controllers/comment-controller.js';
 import { requestController } from '../controllers/request-controller.js';
