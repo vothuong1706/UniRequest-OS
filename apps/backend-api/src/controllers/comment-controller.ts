@@ -34,9 +34,12 @@ export class CommentController {
         return;
       }
 
-      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
-        user.groups
-      );
+      const resolvedGroupsRaw = Array.isArray(user.groups)
+        ? await keycloakGroupService.resolveUserGroupPaths(user.groups)
+        : [];
+      const resolvedGroups = Array.isArray(resolvedGroupsRaw)
+        ? resolvedGroupsRaw
+        : [];
       if (!canViewRequest({ ...user, groups: resolvedGroups }, existing)) {
         res.status(403).json({
           success: false,
@@ -45,10 +48,21 @@ export class CommentController {
         return;
       }
 
+      if (existing.status !== 'APPROVED') {
+        res.status(200).json({
+          success: true,
+          count: 0,
+          comments_enabled: false,
+          data: [],
+        });
+        return;
+      }
+
       const comments = await commentService.listByRequestId(id);
       res.status(200).json({
         success: true,
         count: comments.length,
+        comments_enabled: true,
         data: comments,
       });
     } catch (error) {
@@ -90,13 +104,28 @@ export class CommentController {
         return;
       }
 
-      const resolvedGroups = await keycloakGroupService.resolveUserGroupPaths(
-        user.groups
-      );
+      const resolvedGroupsRaw = Array.isArray(user.groups)
+        ? await keycloakGroupService.resolveUserGroupPaths(user.groups)
+        : [];
+      const resolvedGroups = Array.isArray(resolvedGroupsRaw)
+        ? resolvedGroupsRaw
+        : [];
       if (!canViewRequest({ ...user, groups: resolvedGroups }, existing)) {
         res.status(403).json({
           success: false,
           message: 'Bạn không có quyền trao đổi trong yêu cầu này.',
+        });
+        return;
+      }
+
+      if (existing.status !== 'APPROVED') {
+        res.status(403).json({
+          success: false,
+          code: 'COMMENTS_ONLY_WHEN_APPROVED',
+          message:
+            existing.status === 'REJECTED'
+              ? 'Yêu cầu đã bị từ chối nên không mở mục trao đổi.'
+              : 'Mục trao đổi chỉ được mở sau khi yêu cầu được phê duyệt.',
         });
         return;
       }

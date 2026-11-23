@@ -65,6 +65,23 @@ tasks:
     key: "reports/daily/unirequest-report-{{ execution.startDate | date('yyyy-MM-dd_HHmm', timeZone='Asia/Ho_Chi_Minh') }}.csv"
     contentType: "text/csv"
 
+  - id: send_daily_report_email
+    type: io.kestra.plugin.core.http.Request
+    uri: "{{ envs.backend_url }}/api/internal/kestra/daily-report-notify"
+    method: POST
+    contentType: application/json
+    headers:
+      x-kestra-key: "{{ envs.webhook_key }}"
+    body: |
+      {
+        "total_active": {{ outputs.query_kpi_summary.row.total_active ?? 0 }},
+        "total_pending": {{ outputs.query_kpi_summary.row.total_pending ?? 0 }},
+        "total_approved": {{ outputs.query_kpi_summary.row.total_approved ?? 0 }},
+        "total_rejected": {{ outputs.query_kpi_summary.row.total_rejected ?? 0 }},
+        "minio_key": "unirequest-files/reports/daily/unirequest-report-{{ execution.startDate | date('yyyy-MM-dd_HHmm', timeZone='Asia/Ho_Chi_Minh') }}.csv",
+        "execution_id": "{{ execution.id }}"
+      }
+
   - id: log_report_summary
     type: io.kestra.plugin.core.log.Log
     message: >-

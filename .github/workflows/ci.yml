@@ -103,6 +103,11 @@ jobs:
           assert len(seed.get('categories', [])) >= 10, 'Expected >= 10 seed categories'
           assert len(seed.get('requests', [])) >= 15, 'Expected >= 15 seed requests'
 
+          with open('config/ai/assistant-config.json', encoding='utf-8') as f:
+              ai_cfg = json.load(f)
+          assert ai_cfg.get('prompts', {}).get('assistant_system_prompt'), 'Missing AI system prompt'
+          assert len(ai_cfg.get('domain_profiles', [])) >= 5, 'Expected >= 5 AI domain profiles'
+
           # 3. Validate all Kestra YAML workflows & PostgreSQL init sequence
           try:
               import yaml

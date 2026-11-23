@@ -3,8 +3,8 @@
 ## 1. Phiên bản được hỗ trợ
 
 | Phiên bản | Trạng thái hỗ trợ bản vá bảo mật |
-| :---: | :---: |
-| `1.0.x` | Đang hỗ trợ tích cực |
+| :---------: | :--------------------------------------: |
+|  `1.0.x`  |        Đang hỗ trợ tích cực        |
 | `< 1.0.0` | Khuyến nghị nâng cấp lên `1.0.0` |
 
 ---
@@ -14,15 +14,18 @@
 Nhóm phát triển **UniRequest-OS** coi trọng mọi phản hồi liên quan đến an toàn thông tin. **Vui lòng không mở GitHub Issue công khai** cho các lỗ hổng bảo mật chưa được vá.
 
 Hãy gửi báo cáo qua một trong hai kênh sau:
+
 1. **GitHub Security Advisories:** Mở báo cáo riêng tư tại tab **Security → Advisories → Report a vulnerability** trên kho GitHub của dự án.
-2. **Email nhóm phát triển:** Liên hệ trực tiếp quản trị viên dự án qua email kỹ thuật (`admin@unirequest.edu.vn` hoặc email nhóm trên hồ sơ dự thi).
+2. **Email nhóm phát triển:** Liên hệ trực tiếp quản trị viên dự án qua email kỹ thuật (`daithang558@gmail.com` hoặc email nhóm trên hồ sơ dự thi).
 
 ### Nội dung khuyến nghị trong báo cáo
+
 - Mô tả chi tiết lỗ hổng, thành phần ảnh hưởng (`Kong`, `Nginx`, `Backend API`, `Frontend SPA`, `Keycloak`, `Kestra`, `MinIO`).
 - Các bước tái hiện tối thiểu (PoC / lệnh `curl` hoặc ảnh chụp).
 - Đánh giá mức độ ảnh hưởng và đề xuất khắc phục (nếu có).
 
 ### Cam kết thời gian phản hồi
+
 - **Xác nhận tiếp nhận:** Trong vòng **48 giờ**.
 - **Đánh giá & kế hoạch vá:** Trong vòng **5 ngày làm việc**.
 - **Phát hành bản vá & công bố minh bạch:** Ngay sau khi kiểm thử hồi quy (`make unit-test` & `make test`) đạt 100%, ghi nhận trong `CHANGELOG.md`.

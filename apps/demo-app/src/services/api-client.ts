@@ -2,6 +2,9 @@
 import { ensureFreshToken } from '@/auth/keycloak';
 import { resolveServiceUrl } from '@/lib/runtime-urls';
 import type {
+  AiAssistantConfig,
+  AiAssistantHistoryTurn,
+  AiAssistantResponse,
   AiTriageSuggestion,
   CreateCategoryPayload,
   CreateRequestPayload,
@@ -198,6 +201,16 @@ export const notificationsApi = {
   markAllRead: () =>
     fetchWithAuth<void>('/notifications/read-all', {
       method: 'PATCH',
+    }),
+};
+
+export const aiApi = {
+  getConfig: () => fetchWithAuth<AiAssistantConfig>('/ai/config'),
+
+  ask: (question: string, history?: AiAssistantHistoryTurn[]) =>
+    fetchWithAuth<AiAssistantResponse>('/ai/assistant', {
+      method: 'POST',
+      body: JSON.stringify({ question, history }),
     }),
 };
 

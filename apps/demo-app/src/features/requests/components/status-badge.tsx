@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { RequestPriority, RequestStatus } from '../types';
 import { getPriorityLabel } from '../utils/priority';
 
@@ -24,38 +25,76 @@ const PRIORITY_META: Record<RequestPriority, { dotClass: string }> = {
   URGENT: { dotClass: 'bg-rose-500' },
 };
 
-export function StatusBadge({ status }: { status: RequestStatus }) {
+export function StatusBadge({
+  status,
+  className,
+}: {
+  status: RequestStatus;
+  className?: string;
+}) {
   const meta = STATUS_META[status] ?? STATUS_META.PENDING;
   return (
-    <Badge variant="outline" className="font-normal">
+    <Badge variant="outline" className={cn('font-normal', className)}>
       <span aria-hidden="true" className={`size-1.5 rounded-full ${meta.dotClass}`} />
       <span>{meta.label}</span>
     </Badge>
   );
 }
 
-export function PriorityBadge({ priority }: { priority: RequestPriority }) {
+export function PriorityBadge({
+  priority,
+  className,
+}: {
+  priority: RequestPriority;
+  className?: string;
+}) {
   const meta = PRIORITY_META[priority] ?? PRIORITY_META.NORMAL;
   return (
-    <Badge variant="secondary" className="text-[11px] font-normal">
+    <Badge variant="secondary" className={cn('text-[11px] font-normal', className)}>
       <span aria-hidden="true" className={`size-1.5 rounded-full ${meta.dotClass}`} />
       <span>{getPriorityLabel(priority)}</span>
     </Badge>
   );
 }
 
-export function CategoryBadge({ label }: { label: string }) {
+export function CategoryBadge({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
   return (
-    <Badge variant="outline" className="max-w-44 truncate text-[11px] font-normal">
-      {label}
+    <Badge
+      variant="outline"
+      title={label}
+      className={cn(
+        'max-w-44 justify-start overflow-hidden text-[11px] font-normal',
+        className
+      )}
+    >
+      <span className="block min-w-0 truncate">{label}</span>
     </Badge>
   );
 }
 
-export function DepartmentBadge({ label }: { label: string }) {
+export function DepartmentBadge({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
   return (
-    <Badge variant="secondary" className="max-w-40 truncate text-[11px] font-normal">
-      {label}
+    <Badge
+      variant="secondary"
+      title={label}
+      className={cn(
+        'max-w-40 justify-start overflow-hidden text-[11px] font-normal',
+        className
+      )}
+    >
+      <span className="block min-w-0 truncate">{label}</span>
     </Badge>
   );
 }

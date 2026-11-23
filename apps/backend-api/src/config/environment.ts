@@ -73,11 +73,27 @@ export const config = {
     subject: process.env.VAPID_SUBJECT || 'mailto:admin@unirequest.edu.vn',
   },
 
+  smtp: {
+    enabled: process.env.SMTP_ENABLED !== 'false',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465', 10),
+    secure: process.env.SMTP_SECURE !== 'false',
+    user: (process.env.SMTP_USER || '').trim(),
+    pass: (process.env.SMTP_PASS || '').trim(),
+    from: (process.env.SMTP_FROM || process.env.SMTP_USER || '').trim(),
+    alertTo: parseOriginList(process.env.SMTP_ALERT_TO),
+    appPublicUrl: (process.env.APP_PUBLIC_URL || 'http://localhost:3000').replace(
+      /\/+$/,
+      ''
+    ),
+  },
+
   ai: {
     enabled: process.env.AI_ENABLED !== 'false',
     ollamaUrl: process.env.OLLAMA_URL || 'http://host.docker.internal:11434',
     ollamaModel: process.env.OLLAMA_MODEL || 'qwen2.5:3b',
-    timeoutMs: parseInt(process.env.AI_TIMEOUT_MS || '3500', 10),
+    timeoutMs: parseInt(process.env.AI_TIMEOUT_MS || '45000', 10),
+    configFile: process.env.AI_CONFIG_FILE || '',
   },
 
   security: {

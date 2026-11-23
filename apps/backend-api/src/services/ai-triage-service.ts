@@ -6,6 +6,21 @@ import {
   RequestCategoryEntity,
   RequestPriority,
 } from '../types/request.js';
+import {
+  AiDomainProfileConfig,
+  loadAiConfig,
+} from '../utils/ai-config-loader.js';
+import {
+  extractBigrams,
+  matchesVietnamesePhrase,
+  normalizeKeepDiacritics,
+  renderPromptTemplate,
+  stripVietnameseDiacritics,
+  tokenizeAccentlessSafe,
+  tokenizeDiacriticAware,
+  toPaddedAsciiTokens,
+  toPaddedDiacriticTokens,
+} from '../utils/text-vector.js';
 
 export interface AiTriageInput {
   title: string;
@@ -20,240 +35,46 @@ export interface FastInsightInput extends AiTriageInput {
   currentPriority?: RequestPriority;
 }
 
-interface DomainProfile {
-  id: string;
-  label: string;
-  departmentHints: string[];
-  categoryHints: string[];
-  keywords: string[];
+export function normalizeVietnamese(input: string): string {
+  return stripVietnameseDiacritics(input);
 }
-
-const DOMAIN_PROFILES: readonly DomainProfile[] = [
-  {
-    id: 'FINANCE',
-    label: 'Tài chính & Kế toán',
-    departmentHints: ['ketoan', 'ke toan', 'tai chinh', 'hoc phi'],
-    categoryHints: ['tuition', 'scholarship', 'hoc phi', 'hoc bong', 'ke toan', 'ketoan'],
-    keywords: [
-      'hoc phi',
-      'mien giam',
-      'hoc bong',
-      'bien lai',
-      'hoa don',
-      'thanh toan',
-      'chuyen khoan',
-      'hoan tien',
-      'no hoc phi',
-      'gia han dong tien',
-      'dong hoc phi',
-      'le phi',
-      'ke toan',
-      'tai chinh',
-      'rut tien',
-    ],
-  },
-  {
-    id: 'STUDENT_AFFAIRS',
-    label: 'Công tác Sinh viên & KTX',
-    departmentHints: ['ctsv', 'cong tac sinh vien', 'ktx', 'ky tuc xa', 'sinh vien'],
-    categoryHints: ['certificate', 'enrollment', 'dorm', 'ctsv', 'xac nhan', 'ky tuc xa'],
-    keywords: [
-      'xac nhan sinh vien',
-      'giay xac nhan',
-      'vay von',
-      'the sinh vien',
-      'diem ren luyen',
-      'bao hiem y te',
-      'bhyt',
-      'ky tuc xa',
-      'ktx',
-      'noi tru',
-      'hoan nghia vu',
-      'tro cap xa hoi',
-      'cong tac sinh vien',
-      'ctsv',
-      'tam tru',
-      'khen thuong',
-    ],
-  },
-  {
-    id: 'ACADEMIC',
-    label: 'Đào tạo & Khảo thí',
-    departmentHints: ['daotao', 'dao tao', 'khao thi', 'hoc vu', 'khoa'],
-    categoryHints: ['academic', 'grade', 'phuc khao', 'tin chi', 'dao tao', 'bang diem'],
-    keywords: [
-      'tin chi',
-      'dang ky mon',
-      'hoc phan',
-      'bang diem',
-      'phuc khao',
-      'lich thi',
-      'hoan thi',
-      'bao luu',
-      'tot nghiep',
-      'thuc tap',
-      'khoa luan',
-      'do an',
-      'chuyen nganh',
-      'hoc lai',
-      'cai thien diem',
-      'thoi khoa bieu',
-      'dao tao',
-      'khao thi',
-      'diem thi',
-    ],
-  },
-  {
-    id: 'FACILITY',
-    label: 'Cơ sở vật chất & Thiết bị',
-    departmentHints: ['csvc', 'co so vat chat', 'thiet bi', 'quan tri', 'hanh chinh'],
-    categoryHints: ['facility', 'room', 'thiet bi', 'co so vat chat', 'muon phong', 'sua chua'],
-    keywords: [
-      'may chieu',
-      'dieu hoa',
-      'may lanh',
-      'quat',
-      'bong den',
-      'mat dien',
-      'chap dien',
-      'ro ri',
-      'vo kinh',
-      'ban ghe',
-      'micro',
-      'am thanh',
-      'phong hoc',
-      'hoi truong',
-      'muon phong',
-      've sinh',
-      'thang may',
-      'khoa cua',
-      'hong hoc',
-      'sua chua',
-      'co so vat chat',
-      'thiet bi',
-      'ngap nuoc',
-    ],
-  },
-  {
-    id: 'IT_SUPPORT',
-    label: 'Hỗ trợ CNTT & Hệ thống',
-    departmentHints: ['cntt', 'cong nghe thong tin', 'it', 'trung tam'],
-    categoryHints: ['it_account', 'cntt', 'tai khoan', 'he thong', 'mang'],
-    keywords: [
-      'wifi',
-      'mang internet',
-      'tai khoan',
-      'mat khau',
-      'email',
-      'sso',
-      'keycloak',
-      'lms',
-      'portal',
-      'cong thong tin',
-      'phan mem',
-      'may tinh',
-      'loi dang nhap',
-      'cap lai mat khau',
-      'cntt',
-    ],
-  },
-];
-
-const URGENT_KEYWORDS: readonly string[] = [
-  'khan cap',
-  'khan',
-  'gap lam',
-  'ngay lap tuc',
-  'ngay trong ngay',
-  'chay no',
-  'chap dien',
-  'nguy hiem',
-  'ro ri nuoc',
-  'ngap nuoc',
-  'vo kinh',
-  'mat dien',
-  'khong the thi',
-  'han chot hom nay',
-  'sap het han',
-  'su co nghiem trong',
-];
-
-const HIGH_KEYWORDS: readonly string[] = [
-  'uu tien',
-  'gap',
-  'som nhat',
-  'nhanh',
-  'tuan nay',
-  'quan trong',
-  'vay von',
-  'hoc bong',
-  'phuc khao',
-  'tot nghiep',
-  'hoan thi',
-  'mien giam',
-  'khong dang nhap duoc',
-  'hong may chieu',
-  'loi thanh toan',
-];
 
 /**
- * Chuẩn hóa chuỗi tiếng Việt (bỏ dấu NFD, chuyển đ -> d, chữ thường) để so khớp ổn định.
+ * Nhận diện nhóm lớp sinh viên trong Keycloak ("Lớp" hoặc "Lớp/K11A1")
+ * để không bao giờ gợi ý nhầm làm phòng ban tiếp nhận yêu cầu.
  */
-export function normalizeVietnamese(input: string): string {
-  return input
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/gi, 'd')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+export function isStudentClassGroup(dept: DepartmentGroupItem): boolean {
+  const normPath = stripVietnameseDiacritics((dept.path || '').replace(/^\/+/, ''));
+  const normName = stripVietnameseDiacritics(dept.name || '');
+  if (normPath === 'lop' || normPath.startsWith('lop/')) return true;
+  if (normName === 'lop' && (dept.sub_group_count ?? 0) > 0) return true;
+  return false;
 }
 
-const STOPWORDS = new Set([
-  'xin',
-  'cho',
-  'cua',
-  'gui',
-  'lam',
-  'can',
-  'nho',
-  'voi',
-  'tai',
-  'yeu',
-  'cau',
-  'bao',
-  'cap',
-  'nop',
-  'don',
-  'trong',
-  'nay',
-  'sau',
-  'khi',
-  've',
-  'va',
-  'hoac',
-  'em',
-  'toi',
-  'sinh',
-  'vien',
-]);
-
-function tokenizeNormalized(input: string): string[] {
-  return normalizeVietnamese(input)
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= 2 && !STOPWORDS.has(token));
+export function filterRealDepartments(
+  departments: DepartmentGroupItem[]
+): DepartmentGroupItem[] {
+  return departments.filter((dept) => !isStudentClassGroup(dept));
 }
 
 function findKeywordsInText(
-  normalizedText: string,
+  diacriticText: string,
+  accentlessText: string,
   candidates: readonly string[]
 ): string[] {
-  return candidates.filter((kw) => normalizedText.includes(kw));
+  return candidates.filter((kw) =>
+    matchesVietnamesePhrase(diacriticText, accentlessText, kw)
+  );
 }
 
 function doesEntityMatchHints(entityText: string, hints: readonly string[]): boolean {
-  const normalized = normalizeVietnamese(entityText);
-  return hints.some((hint) => normalized.includes(hint));
+  const diaEntity = normalizeKeepDiacritics(entityText);
+  const asciiEntity = stripVietnameseDiacritics(entityText);
+  return hints.some((hint) => {
+    const diaHint = normalizeKeepDiacritics(hint);
+    const asciiHint = stripVietnameseDiacritics(hint);
+    return diaEntity.includes(diaHint) || asciiEntity.includes(asciiHint);
+  });
 }
 
 function findMatchingDepartment(
@@ -261,17 +82,17 @@ function findMatchingDepartment(
   departmentText?: string | null
 ): DepartmentGroupItem | null {
   if (!departmentText) return null;
-  const normalizedTarget = normalizeVietnamese(departmentText.replace(/^\/+/, ''));
+  const normalizedTarget = stripVietnameseDiacritics(departmentText.replace(/^\/+/, ''));
   return (
     departments.find(
       (d) =>
-        normalizeVietnamese(d.path) === normalizedTarget ||
-        normalizeVietnamese(d.name) === normalizedTarget
+        stripVietnameseDiacritics(d.path) === normalizedTarget ||
+        stripVietnameseDiacritics(d.name) === normalizedTarget
     ) ??
     departments.find(
       (d) =>
-        normalizedTarget.includes(normalizeVietnamese(d.name)) ||
-        normalizeVietnamese(d.path).includes(normalizedTarget)
+        normalizedTarget.includes(stripVietnameseDiacritics(d.name)) ||
+        stripVietnameseDiacritics(d.path).includes(normalizedTarget)
     ) ??
     null
   );
@@ -295,24 +116,39 @@ function buildReadableSummary(params: {
 }
 
 /**
- * Bộ suy luận Ngữ nghĩa Tiếng Việt nội bộ (Deterministic Rule-NLP Engine).
- * Luôn sẵn sàng < 5ms ngay cả khi không bật Ollama hoặc máy chấm thi không có GPU.
+ * Bộ suy luận Ngữ nghĩa Tiếng Việt giữ dấu (đọc hồ sơ & từ khóa từ config/ai/assistant-config.json).
+ * Chống nhầm đồng âm bỏ dấu ("muốn" != "mượn", "kỷ" != "ký", "đang" != "đăng").
  */
 export function analyzeRequestWithRuleEngine(
   input: AiTriageInput
 ): Omit<AiTriageSuggestion, 'latency_ms'> {
+  const aiCfg = loadAiConfig();
+  const diacriticStopwords = new Set(aiCfg.diacritic_stopwords);
+  const accentlessStopwords = new Set(aiCfg.accentless_ambiguous_stopwords);
+
   const combinedRaw = `${input.title || ''} ${input.description || ''}`.trim();
-  const normalizedText = normalizeVietnamese(combinedRaw);
-  const inputTokens = new Set(tokenizeNormalized(combinedRaw));
+  const diacriticText = toPaddedDiacriticTokens(combinedRaw);
+  const accentlessText = toPaddedAsciiTokens(combinedRaw);
+
+  const diaTokens = tokenizeDiacriticAware(combinedRaw, diacriticStopwords);
+  const diaTokenSet = new Set(diaTokens);
+  const diaBigramSet = new Set(extractBigrams(diaTokens));
+  const safeAsciiTokenSet = new Set(
+    tokenizeAccentlessSafe(combinedRaw, accentlessStopwords)
+  );
 
   const matchedKeywords = new Set<string>();
-  let bestDomain: DomainProfile | null = null;
+  let bestDomain: AiDomainProfileConfig | null = null;
   let bestDomainScore = 0;
 
-  for (const profile of DOMAIN_PROFILES) {
-    const hits = findKeywordsInText(normalizedText, profile.keywords);
-    if (hits.length > bestDomainScore) {
-      bestDomainScore = hits.length;
+  for (const profile of aiCfg.domain_profiles) {
+    const hits = findKeywordsInText(diacriticText, accentlessText, profile.keywords);
+    const weightedScore = hits.reduce(
+      (sum, kw) => sum + (kw.trim().includes(' ') ? 3 : 2),
+      0
+    );
+    if (weightedScore > bestDomainScore) {
+      bestDomainScore = weightedScore;
       bestDomain = profile;
     }
     for (const hit of hits) {
@@ -320,69 +156,100 @@ export function analyzeRequestWithRuleEngine(
     }
   }
 
-  // 1. Chấm điểm từng danh mục đang bật trong PostgreSQL
+  // 1. Chấm điểm từng danh mục đang bật trong PostgreSQL (giữ dấu tiếng Việt, không cộng điểm ảo từ từ đồng âm)
   const activeCategories = input.categories.filter((c) => c.is_active !== false);
   let bestCategory: RequestCategoryEntity | null = null;
   let bestCategoryScore = 0;
 
   for (const category of activeCategories) {
     let score = 0;
-    const catComposite = `${category.code} ${category.name} ${category.department}`;
-    const catTokens = tokenizeNormalized(catComposite);
+    const catComposite = `${category.name} ${category.department}`;
+    const catDiaTokens = tokenizeDiacriticAware(catComposite, diacriticStopwords);
+    const catDiaBigrams = extractBigrams(catDiaTokens);
+    const catSafeAsciiTokens = tokenizeAccentlessSafe(
+      `${category.code} ${category.name}`,
+      accentlessStopwords
+    );
 
-    for (const token of catTokens) {
-      if (inputTokens.has(token)) {
-        score += 2;
+    let directOverlap = 0;
+    for (const bigram of catDiaBigrams) {
+      if (diaBigramSet.has(bigram)) {
+        score += 5;
+        directOverlap += 5;
+      }
+    }
+    for (const token of catDiaTokens) {
+      if (diaTokenSet.has(token)) {
+        score += 3;
+        directOverlap += 3;
+      }
+    }
+    for (const token of catSafeAsciiTokens) {
+      if (safeAsciiTokenSet.has(token)) {
+        score += 1;
+        directOverlap += 1;
       }
     }
 
-    if (
-      bestDomain &&
-      doesEntityMatchHints(catComposite, [
+    const domainMatched =
+      bestDomain !== null &&
+      doesEntityMatchHints(`${category.code} ${category.name} ${category.department}`, [
         ...bestDomain.categoryHints,
         ...bestDomain.departmentHints,
-      ])
-    ) {
-      score += 4 + bestDomainScore;
+      ]);
+    if (domainMatched) {
+      score += 4 + Math.min(bestDomainScore, 6);
     }
 
-    if (score > bestCategoryScore) {
+    // Yêu cầu phải có tín hiệu thật từ nội dung hoặc domain rõ ràng
+    const hasMeaningfulSignal = directOverlap >= 4 || (domainMatched && bestDomainScore >= 2);
+    if (hasMeaningfulSignal && score > bestCategoryScore) {
       bestCategoryScore = score;
       bestCategory = category;
     }
   }
 
-  // 2. Chấm điểm các Group/Phòng ban thực tế từ Keycloak
+  // 2. Chấm điểm các Group/Phòng ban thực tế từ Keycloak (LOẠI BỎ hoàn toàn nhóm "Lớp" và "Lớp/*")
+  const realDepartments = filterRealDepartments(input.departments);
   let bestDepartment: DepartmentGroupItem | null = null;
   let bestDeptScore = 0;
 
-  for (const dept of input.departments) {
+  for (const dept of realDepartments) {
     let score = 0;
     const deptComposite = `${dept.name} ${dept.path} ${dept.display_label}`;
-    const normDeptName = normalizeVietnamese(dept.name);
-    const normDeptPath = normalizeVietnamese(dept.path);
+    const diaDeptName = normalizeKeepDiacritics(dept.name);
+    const asciiDeptName = stripVietnameseDiacritics(dept.name);
+    const asciiDeptPath = stripVietnameseDiacritics(dept.path);
 
-    if (normDeptName && normalizedText.includes(normDeptName)) {
-      score += 6;
-      matchedKeywords.add(normDeptName);
-    } else if (normDeptPath && normalizedText.includes(normDeptPath)) {
+    if (
+      diaDeptName &&
+      matchesVietnamesePhrase(diacriticText, accentlessText, dept.name)
+    ) {
+      score += 7;
+      matchedKeywords.add(dept.name);
+    } else if (
+      asciiDeptPath &&
+      asciiDeptPath.length >= 3 &&
+      matchesVietnamesePhrase(diacriticText, accentlessText, dept.path)
+    ) {
       score += 5;
     }
 
-    for (const token of tokenizeNormalized(deptComposite)) {
-      if (inputTokens.has(token)) {
+    for (const token of tokenizeDiacriticAware(deptComposite, diacriticStopwords)) {
+      if (diaTokenSet.has(token)) {
         score += 2;
       }
     }
 
     if (bestDomain && doesEntityMatchHints(deptComposite, bestDomain.departmentHints)) {
-      score += 5 + bestDomainScore;
+      score += 6 + Math.min(bestDomainScore, 6);
     }
 
     if (
       bestCategory &&
-      (normalizeVietnamese(bestCategory.department) === normDeptPath ||
-        normDeptPath.startsWith(`${normalizeVietnamese(bestCategory.department)}/`))
+      (stripVietnameseDiacritics(bestCategory.department) === asciiDeptPath ||
+        asciiDeptPath.startsWith(`${stripVietnameseDiacritics(bestCategory.department)}/`) ||
+        stripVietnameseDiacritics(bestCategory.department) === asciiDeptName)
     ) {
       score += 4;
     }
@@ -394,13 +261,13 @@ export function analyzeRequestWithRuleEngine(
   }
 
   if (!bestDepartment && bestCategory) {
-    bestDepartment = findMatchingDepartment(input.departments, bestCategory.department);
+    bestDepartment = findMatchingDepartment(realDepartments, bestCategory.department);
   }
 
-  // Bảo đảm tính nhất quán Phòng ban <-> Danh mục (tránh gợi ý danh mục của phòng khác)
+  // Bảo đảm tính nhất quán Phòng ban <-> Danh mục
   if (bestDepartment && bestCategory) {
-    const normDept = normalizeVietnamese(bestDepartment.path);
-    const normCatDept = normalizeVietnamese(bestCategory.department);
+    const normDept = stripVietnameseDiacritics(bestDepartment.path);
+    const normCatDept = stripVietnameseDiacritics(bestCategory.department);
     const sameDept =
       normCatDept === normDept ||
       normDept.startsWith(`${normCatDept}/`) ||
@@ -408,28 +275,39 @@ export function analyzeRequestWithRuleEngine(
     if (!sameDept) {
       const deptCategories = activeCategories.filter(
         (c) =>
-          normalizeVietnamese(c.department) === normDept ||
-          normDept.startsWith(`${normalizeVietnamese(c.department)}/`)
+          stripVietnameseDiacritics(c.department) === normDept ||
+          normDept.startsWith(`${stripVietnameseDiacritics(c.department)}/`)
       );
       bestCategory = deptCategories[0] ?? null;
     }
   }
 
-  // Nếu tìm được phòng ban trước nhưng chưa tìm được danh mục cụ thể, chọn danh mục thuộc phòng ban đó
-  if (bestDepartment && !bestCategory) {
+  if (bestDepartment && !bestCategory && bestDomainScore >= 2) {
+    const normDept = stripVietnameseDiacritics(bestDepartment.path);
     const deptCategories = activeCategories.filter(
       (c) =>
-        normalizeVietnamese(c.department) === normalizeVietnamese(bestDepartment.path) ||
-        normalizeVietnamese(bestDepartment.path).startsWith(
-          `${normalizeVietnamese(c.department)}/`
-        )
+        stripVietnameseDiacritics(c.department) === normDept ||
+        normDept.startsWith(`${stripVietnameseDiacritics(c.department)}/`)
     );
-    bestCategory = deptCategories[0] ?? null;
+    // Chỉ tự gắn danh mục nếu có ít nhất 1 từ khóa trùng với danh mục của phòng đó, ngược lại giữ OTHER
+    const matchingDeptCat = deptCategories.find((cat) => {
+      const tokens = tokenizeDiacriticAware(cat.name, diacriticStopwords);
+      return tokens.some((t) => diaTokenSet.has(t));
+    });
+    bestCategory = matchingDeptCat ?? null;
   }
 
-  // 3. Phân tích mức độ ưu tiên
-  const urgentHits = findKeywordsInText(normalizedText, URGENT_KEYWORDS);
-  const highHits = findKeywordsInText(normalizedText, HIGH_KEYWORDS);
+  // 3. Phân tích mức độ ưu tiên từ config ngoài
+  const urgentHits = findKeywordsInText(
+    diacriticText,
+    accentlessText,
+    aiCfg.priority_keywords.urgent
+  );
+  const highHits = findKeywordsInText(
+    diacriticText,
+    accentlessText,
+    aiCfg.priority_keywords.high
+  );
   for (const hit of [...urgentHits, ...highHits]) {
     matchedKeywords.add(hit);
   }
@@ -449,8 +327,13 @@ export function analyzeRequestWithRuleEngine(
   const suggestedCategoryName = bestCategory?.name ?? 'Yêu cầu khác';
 
   const totalSignal =
-    bestDomainScore + (bestCategoryScore > 0 ? 2 : 0) + (bestDeptScore > 0 ? 2 : 0);
-  const confidence = Math.min(0.96, Math.max(0.56, Number((0.56 + totalSignal * 0.05).toFixed(2))));
+    Math.min(bestDomainScore, 6) +
+    (bestCategoryScore > 0 ? 2 : 0) +
+    (bestDeptScore > 0 ? 2 : 0);
+  const confidence =
+    totalSignal === 0
+      ? 0.45
+      : Math.min(0.96, Math.max(0.55, Number((0.52 + totalSignal * 0.045).toFixed(2))));
 
   const reasonParts: string[] = [];
   if (bestDomain) {
@@ -458,16 +341,16 @@ export function analyzeRequestWithRuleEngine(
   }
   if (matchedKeywords.size > 0) {
     const preview = Array.from(matchedKeywords).slice(0, 4).join(', ');
-    reasonParts.push(`khớp từ khóa [${preview}]`);
+    reasonParts.push(`khớp cụm từ [${preview}]`);
   }
   if (suggestedDeptLabel) {
-    reasonParts.push(`đề xuất chuyển "${suggestedDeptLabel}"`);
+    reasonParts.push(`phù hợp phòng ban "${suggestedDeptLabel}"`);
   }
   if (bestCategory?.requires_evidence) {
-    reasonParts.push('lưu ý danh mục này khuyến nghị đính kèm minh chứng');
+    reasonParts.push('danh mục này khuyến nghị đính kèm minh chứng');
   }
   if (reasonParts.length === 0) {
-    reasonParts.push('Phân tích ngữ nghĩa tổng quát từ tiêu đề và mô tả yêu cầu');
+    reasonParts.push('Chưa có từ khóa chuyên biệt trùng khớp, nên chọn phòng ban phù hợp thủ công');
   }
 
   return {
@@ -498,7 +381,9 @@ interface OllamaRawResult {
 }
 
 function buildOllamaPrompt(input: AiTriageInput): string {
-  const deptLines = input.departments
+  const aiCfg = loadAiConfig();
+  const realDepartments = filterRealDepartments(input.departments);
+  const deptLines = realDepartments
     .slice(0, 25)
     .map((d) => `- "${d.path}" (${d.display_label})`)
     .join('\n');
@@ -508,28 +393,15 @@ function buildOllamaPrompt(input: AiTriageInput): string {
     .map((c) => `- "${c.code}": ${c.name} [Phòng: ${c.department}]`)
     .join('\n');
 
-  return [
-    'Bạn là trợ lý phân tuyến yêu cầu hành chính đại học (UniRequest-OS).',
-    'Hãy chọn ĐÚNG 1 department_path trong danh sách sau (hoặc null nếu không chắc):',
-    deptLines || '- (Chưa có danh sách phòng ban)',
-    '',
-    'Hãy chọn ĐÚNG 1 category_code trong danh sách sau (hoặc "OTHER"):',
-    catLines || '- "OTHER": Yêu cầu khác',
-    '',
-    'Yêu cầu của sinh viên/cán bộ:',
-    `Tiêu đề: ${input.title}`,
-    `Mô tả: ${input.description || '(Không có)'}`,
-    '',
-    'Trả về DUY NHẤT JSON hợp lệ theo schema:',
-    '{"department_path":"...","category_code":"...","priority":"NORMAL|HIGH|URGENT","summary":"tóm tắt 1 câu tiếng Việt","reason":"lý do ngắn tiếng Việt"}',
-  ].join('\n');
+  return renderPromptTemplate(aiCfg.prompts.triage_prompt_template, {
+    departments_list: deptLines || '- (Chưa có danh sách phòng ban)',
+    categories_list: catLines || '- "OTHER": Yêu cầu khác',
+    title: input.title,
+    description: input.description || '(Không có)',
+  });
 }
 
 export class AiTriageService {
-  /**
-   * Phân tích đề xuất phân tuyến Hybrid: ưu tiên Ollama nội bộ (timeout ngắn 3.5s),
-   * tự động fallback mượt sang Bộ suy luận Ngữ nghĩa Tiếng Việt nếu Ollama chưa bật.
-   */
   async suggestTriage(
     input: AiTriageInput,
     options?: {
@@ -568,7 +440,7 @@ export class AiTriageService {
           prompt: buildOllamaPrompt(input),
           format: 'json',
           stream: false,
-          options: { temperature: 0.1 },
+          options: { temperature: 0.1, num_predict: 200 },
         }),
         signal: controller.signal,
       });
@@ -583,10 +455,10 @@ export class AiTriageService {
       }
 
       const parsed = JSON.parse(envelope.response) as OllamaRawResult;
+      const realDepartments = filterRealDepartments(input.departments);
 
-      // Chống ảo giác LLM: luôn đối chiếu lại với Keycloak Groups & PostgreSQL Categories thực tế
       const matchedDept = parsed.department_path
-        ? findMatchingDepartment(input.departments, parsed.department_path)
+        ? findMatchingDepartment(realDepartments, parsed.department_path)
         : null;
       const suggestedDeptPath =
         matchedDept?.path ?? ruleBaseline.suggested_department;
@@ -641,7 +513,7 @@ export class AiTriageService {
   }
 
   /**
-   * Tạo thẻ phân tích nhanh (< 2ms) dùng cho màn hình Chi tiết yêu cầu của Cán bộ.
+   * Tạo tóm tắt nhanh (< 2ms) luôn bám sát đúng Phòng ban & Danh mục thực tế của đơn.
    */
   buildFastInsight(input: FastInsightInput): AiTriageSuggestion {
     const start = Date.now();
@@ -652,17 +524,28 @@ export class AiTriageService {
         )
       : undefined;
 
-    const deptLabel = input.currentDepartment
-      ? input.currentDepartment.split('/').join(' / ')
-      : base.suggested_department_label;
+    const deptPath = input.currentDepartment ?? base.suggested_department;
+    const deptLabel = deptPath ? deptPath.split('/').join(' / ') : base.suggested_department_label;
+    const categoryCode = activeCat?.code ?? input.currentCategoryCode ?? base.suggested_category_code;
+    const categoryName = activeCat?.name ?? (categoryCode === 'OTHER' ? 'Yêu cầu khác' : base.suggested_category_name);
+    const priority = input.currentPriority ?? base.suggested_priority;
 
     return {
       ...base,
-      suggested_department: input.currentDepartment ?? base.suggested_department,
+      suggested_department: deptPath,
       suggested_department_label: deptLabel,
-      suggested_category_code: activeCat?.code ?? base.suggested_category_code,
-      suggested_category_name: activeCat?.name ?? base.suggested_category_name,
-      suggested_priority: input.currentPriority ?? base.suggested_priority,
+      suggested_category_code: categoryCode,
+      suggested_category_name: categoryName,
+      suggested_priority: priority,
+      summary: buildReadableSummary({
+        title: input.title,
+        departmentLabel: deptLabel,
+        categoryName,
+        priority,
+      }),
+      reason: deptLabel
+        ? `Yêu cầu đang được tiếp nhận tại tuyến "${deptLabel}" (${categoryName}).`
+        : base.reason,
       latency_ms: Math.max(1, Date.now() - start),
     };
   }

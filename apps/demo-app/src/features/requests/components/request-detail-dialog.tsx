@@ -9,7 +9,6 @@ import {
   Printer,
   ShieldAlert,
   ShieldCheck,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -223,7 +222,8 @@ export function RequestDetailDialog({
           </div>
           <DialogTitle className="pt-1 leading-snug">{activeItem.title}</DialogTitle>
           <DialogDescription>
-            {activeItem.created_by} ·{' '}
+            {activeItem.created_by}
+            {activeItem.sender_group ? ` (${activeItem.sender_group})` : ''} ·{' '}
             <span className="tabular-nums">{formatDateTime(activeItem.created_at)}</span>{' '}
             · {department}
           </DialogDescription>
@@ -239,34 +239,6 @@ export function RequestDetailDialog({
               {cleanDescription || 'Không có mô tả bổ sung.'}
             </p>
           </div>
-
-          {/* Phân tích thông minh [I] */}
-          {matchedDetail?.ai_insight && (
-            <div className="bg-muted/50 space-y-1.5 rounded-lg border p-3.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-xs font-semibold">
-                  <Sparkles className="size-3.5" />
-                  <span>Phân tích thông minh [I]</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className="text-[11px]">
-                    {matchedDetail.ai_insight.provider === 'ollama'
-                      ? `Ollama (${matchedDetail.ai_insight.model ?? 'LLM'})`
-                      : 'Local NLP Engine'}
-                  </Badge>
-                  <Badge variant="outline" className="text-[11px] tabular-nums">
-                    {Math.round(matchedDetail.ai_insight.confidence * 100)}%
-                  </Badge>
-                </div>
-              </div>
-              <p className="text-xs font-medium leading-snug">
-                {matchedDetail.ai_insight.summary}
-              </p>
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                {matchedDetail.ai_insight.reason}
-              </p>
-            </div>
-          )}
 
           {/* Kết quả xử lý */}
           {(activeItem.reviewed_by || activeItem.review_note) && (
@@ -307,12 +279,14 @@ export function RequestDetailDialog({
             </div>
           )}
 
-          {/* Trao đổi trực tiếp (Realtime Comments) */}
-          <RequestCommentsPanel
-            requestId={activeItem.id}
-            currentUsername={currentUsername}
-            incomingComment={incomingComment}
-          />
+          {/* Trao đổi trực tiếp: chỉ mở sau khi yêu cầu đã được phê duyệt (tránh spam) */}
+          {activeItem.status === 'APPROVED' && (
+            <RequestCommentsPanel
+              requestId={activeItem.id}
+              currentUsername={currentUsername}
+              incomingComment={incomingComment}
+            />
+          )}
 
           {/* Lịch sử xử lý */}
           <div className="space-y-2.5">
@@ -346,7 +320,7 @@ export function RequestDetailDialog({
                     <span>
                       {matchedDetail.audit_integrity.valid
                         ? `Chuỗi SHA-256 hợp lệ (${matchedDetail.audit_integrity.checked_entries})`
-                        : 'Cảnh báo sai lệch sổ cái'}
+                        : 'Cảnh báo sai lệch lịch sử SHA-256'}
                     </span>
                   </Badge>
                 )}

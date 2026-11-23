@@ -11,7 +11,7 @@ Tài liệu này trình bày thiết kế kiến trúc 3 tầng DX-OS của dự
    - **`[H]` Quản lý người dùng & tương tác:** Chuẩn hóa tài khoản đăng nhập và nhóm phòng ban từ Keycloak JWT (`RS256`, PKCE `S256`).
    - **`[P]` Định tuyến quy trình:** Sử dụng thông tin tài khoản và cây nhóm phòng ban để phân luồng yêu cầu, kiểm tra dữ liệu đầu vào ở cả giao diện và API, đồng thời điều phối quy trình qua Kestra (`unirequest.dxos`).
    - **`[D]` Lưu trữ & bảo vệ dữ liệu:** Lưu dữ liệu yêu cầu vào PostgreSQL 16 (lưu lịch sử xử lý kèm mã băm `SHA-256` để phát hiện nếu dữ liệu bị sửa trực tiếp trong CSDL) và kiểm tra chữ ký file thật (`Magic Bytes`) trong bộ nhớ trước khi lưu lên MinIO để chặn file thực thi đổi đuôi.
-   - **`[I]` Hỗ trợ phân loại bằng AI:** Module `AiTriageService` gợi ý phòng ban, danh mục và mức ưu tiên từ nội dung tiếng Việt; kết quả luôn được đối chiếu với danh sách phòng ban Keycloak thật và để người dùng xác nhận cuối cùng.
+   - **`[I]` Trợ lý AI v3.0 & Hỗ trợ phân loại:** Trang **Trợ lý AI** (`POST /api/ai/assistant`) dùng **Ultra-Lean JSON-Schema Enum Router** trên `Ollama qwen2.5:3b` (`~352ms`/lượt) kết hợp **Hybrid Catalog** từ 5 Phòng ban & danh mục thật, cấu hình ngoài tại [`config/ai/assistant-config.json`](../config/ai/assistant-config.json), chống Prompt Injection, bảo vệ Zero Information Disclosure và đồng nhất 100% với bộ dự phòng khi chạy offline.
 
 ### Ranh giới 3 tầng & Cổng giao tiếp
 
@@ -27,14 +27,14 @@ Tài liệu này trình bày thiết kế kiến trúc 3 tầng DX-OS của dự
 
 ## 2. Thiết kế Cơ sở Dữ liệu PostgreSQL 16 (7 bảng) & Bảo vệ Dữ liệu
 
-Cơ sở dữ liệu được khởi tạo tự động thông qua chuỗi **11 tệp SQL** trong [`config/postgres/init/`](../config/postgres/init) (`01`..`11`), đồng bộ 100% với [`apps/backend-api/db/init.sql`](../apps/backend-api/db/init.sql) và hàm `ensureTablesExist()` trong `apps/backend-api/src/config/database.ts`.
+Cơ sở dữ liệu được khởi tạo tự động thông qua chuỗi **13 tệp SQL** trong [`config/postgres/init/`](../config/postgres/init) (`01`..`13`), đồng bộ 100% với [`apps/backend-api/db/init.sql`](../apps/backend-api/db/init.sql) và hàm `ensureTablesExist()` trong `apps/backend-api/src/config/database.ts`.
 
 | Tên bảng | Khóa chính & Quan hệ | Chức năng trong hệ thống |
 | :--- | :--- | :--- |
-| `requests` | `id UUID` | Lưu thông tin yêu cầu (`target_department`, `priority`, `status`, `workflow_execution_id`, hai cờ `hidden_by_sender` / `hidden_by_receiver`) |
-| `request_audit_logs` | `id UUID`, `FK request_id -> requests` | Lưu lịch sử xử lý kèm `prev_hash` -> `entry_hash` (`SHA-256`) và hỗ trợ kiểm tra tránh gửi cảnh báo `SLA_WARNING` lặp lại |
+| `requests` | `id UUID` | Lưu thông tin yêu cầu (`target_department`, `sender_group` đồng bộ lớp từ Keycloak, `priority`, `status`, `workflow_execution_id`, hai cờ `hidden_by_sender` / `hidden_by_receiver`) |
+| `request_audit_logs` | `id UUID`, `FK request_id -> requests` | Lưu lịch sử xử lý kèm `prev_hash` -> `entry_hash` (`SHA-256`) và hỗ trợ kiểm tra tránh gửi cảnh báo `SLA_WARNING` lặp lại trong 6 giờ |
 | `request_categories` | `id UUID`, `code UNIQUE` | Danh mục loại yêu cầu tách riêng theo từng `department`, cờ `requires_evidence` và thời hạn `sla_hours` |
-| `request_comments` | `id UUID`, `FK request_id -> requests` | Lưu nội dung trao đổi bình luận 2 chiều giữa sinh viên và cán bộ phòng ban |
+| `request_comments` | `id UUID`, `FK request_id -> requests` | Lưu nội dung trao đổi bình luận 2 chiều (khóa chống spam: chỉ mở khi đơn đạt trạng thái `APPROVED`, chặn `403` ở `PENDING`/`REJECTED`) |
 | `notifications` | `id UUID`, `FK request_id -> requests` | Thông báo gửi theo đúng phòng ban (`recipient_department`) và vai trò người nhận |
 | `notification_reads` | `PK (notification_id, username)` | Lưu trạng thái đã đọc (`is_read`) và đã ẩn (`is_hidden`) riêng cho từng tài khoản trong cùng phòng ban |
 | `push_subscriptions` | `id UUID`, `endpoint UNIQUE` | Lưu thông tin đăng ký Web Push VAPID kèm mảng `groups TEXT[]` để gửi thông báo đẩy đúng phòng ban |
@@ -65,7 +65,7 @@ Dự án **UniRequest-OS: Nền tảng Quản lý Yêu cầu Đại học (Stude
 | **Kong Gateway** | `kong:3.7.1` | `Apache-2.0` | Dùng image gốc + script khởi tạo route và plugin [`kong-setup.sh`](../kong-setup.sh) |
 | **Kestra OSS** | `kestra/kestra:v2.0.11` | `Apache-2.0` | Dùng image ổn định cố định + 3 quy trình YAML đồng bộ qua `scripts/kestra-setup.sh` |
 | **Caddy** | `caddy:2-alpine` | `Apache-2.0` | Chạy theo profile `internet`, cấp chứng chỉ HTTPS tự động từ `config/caddy/Caddyfile` |
-| **PostgreSQL** | `postgres:16-alpine` | `PostgreSQL` | Dùng image gốc + 11 tệp SQL khởi tạo schema `01..11` & nạp dữ liệu mẫu từ `config/seed/demo-data.json` |
+| **PostgreSQL** | `postgres:16-alpine` | `PostgreSQL` | Dùng image gốc + 13 tệp SQL khởi tạo schema `01..13` (`sender_group`, `request_embeddings`, chuỗi `SHA-256`) & nạp dữ liệu mẫu từ `config/seed/demo-data.json` |
 | **MinIO / Silo S3** | `pgsty/silo:RELEASE.2026-11-12T00-00-00Z` | `AGPL-3.0-or-later` | Chạy container độc lập (bucket Private + HMAC Signed URL), giao tiếp hoàn toàn qua giao thức S3 HTTP API nên không xung đột `Apache-2.0` |
 | **Frontend / Backend** | React 19, Vite 8, Express, Socket.IO, Lucide | `MIT` / `ISC` | Đóng gói trong `apps/` bằng `Dockerfile` multi-stage `node:20-alpine` & `nginx:alpine` |
 

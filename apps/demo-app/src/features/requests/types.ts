@@ -60,6 +60,7 @@ export interface RequestItem {
   category?: string;
   custom_category_label?: string | null;
   target_department?: string | null;
+  sender_group?: string | null;
   priority?: RequestPriority;
   status: RequestStatus;
   created_by: string;
@@ -111,6 +112,110 @@ export interface AiTriageSuggestion {
   provider: AiTriageProvider;
   model?: string;
   latency_ms: number;
+}
+
+export type AiAssistantIntent =
+  'STATS' | 'OVERDUE_AUDIT' | 'STATUS_FILTER' | 'ROUTING_HELP' | 'SEMANTIC_SEARCH';
+
+export interface AiAssistantMatchedRequest {
+  id: string;
+  title: string;
+  status: RequestStatus;
+  priority: RequestPriority;
+  category: string;
+  category_name: string;
+  target_department: string | null;
+  sender_group: string | null;
+  created_by: string;
+  created_at: string;
+  review_note: string | null;
+  has_attachment: boolean;
+  sla_hours: number;
+  elapsed_hours: number;
+  sla_overdue: boolean;
+  similarity_score: number;
+}
+
+export interface AiAssistantSenderSummary {
+  username: string;
+  sender_group: string | null;
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  overdue_sla: number;
+}
+
+export interface AiAssistantRecommendedCategory {
+  code: string;
+  name: string;
+  department: string;
+  sla_hours: number;
+  requires_evidence: boolean;
+  score: number;
+}
+
+export interface AiAssistantDepartmentGroup {
+  department: string;
+  group_kind: 'sender_group' | 'department';
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  urgent: number;
+  overdue_sla: number;
+  unique_senders: number;
+  requests: AiAssistantMatchedRequest[];
+}
+
+export interface AiAssistantDepartmentStat {
+  department: string;
+  group_kind: 'sender_group' | 'department';
+  total: number;
+  approved: number;
+  pending: number;
+  rejected: number;
+  urgent: number;
+  overdue_sla: number;
+  unique_senders: number;
+}
+
+export interface AiAssistantHistoryTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface AiAssistantResponse {
+  answer: string;
+  scope: 'ALL' | 'DEPARTMENT' | 'PERSONAL';
+  intent: AiAssistantIntent;
+  group_by_mode: 'sender_group' | 'department';
+  show_metrics: boolean;
+  metrics: {
+    total: number;
+    unique_senders: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    urgent: number;
+    overdue_sla: number;
+    avg_resolution_hours: number | null;
+  };
+  senders_summary: AiAssistantSenderSummary[];
+  department_stats: AiAssistantDepartmentStat[];
+  grouped_requests: AiAssistantDepartmentGroup[];
+  matched_requests: AiAssistantMatchedRequest[];
+  recommended_categories: AiAssistantRecommendedCategory[];
+  follow_up_suggestions: string[];
+  scoped_count: number;
+  latency_ms: number;
+}
+
+export interface AiAssistantConfig {
+  scope: 'ALL' | 'DEPARTMENT' | 'PERSONAL';
+  departments: string[];
+  scoped_count: number;
+  quick_prompts: string[];
 }
 
 export interface RequestDetailItem extends RequestItem {

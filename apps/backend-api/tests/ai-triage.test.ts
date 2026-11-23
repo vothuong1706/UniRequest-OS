@@ -200,4 +200,39 @@ describe('AiTriageService & Vietnamese Rule-NLP Engine [I]', () => {
     expect(result.suggested_category_code).toBe('KETOAN_HOC_PHI');
     expect(result.suggested_priority).toBe('HIGH');
   });
+
+  it('loại bỏ hoàn toàn nhóm Lớp và Lớp/* khỏi danh sách phòng ban gợi ý (không bao giờ gợi ý Lớp/K11A1)', () => {
+    const deptsWithClasses: DepartmentGroupItem[] = [
+      ...MOCK_DEPARTMENTS,
+      {
+        id: 'grp-lop',
+        name: 'Lớp',
+        path: 'Lớp',
+        display_label: 'Lớp',
+        parent_path: null,
+        depth: 0,
+        sub_group_count: 2,
+      },
+      {
+        id: 'grp-k11a1',
+        name: 'K11A1',
+        path: 'Lớp/K11A1',
+        display_label: 'Lớp / K11A1',
+        parent_path: 'Lớp',
+        depth: 1,
+        sub_group_count: 0,
+      },
+    ];
+
+    const result = analyzeRequestWithRuleEngine({
+      title: 'Sinh viên lớp K11A1 báo lỗi máy tính không mở được và mất wifi phòng học',
+      description: 'Cần sửa máy tính và kiểm tra mạng wifi tại phòng học của lớp K11A1.',
+      departments: deptsWithClasses,
+      categories: MOCK_CATEGORIES,
+    });
+
+    expect(result.suggested_department).toBe('CSVC');
+    expect(result.suggested_department).not.toBe('Lớp');
+    expect(result.suggested_department).not.toBe('Lớp/K11A1');
+  });
 });

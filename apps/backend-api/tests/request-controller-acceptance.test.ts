@@ -42,15 +42,21 @@ vi.mock('../src/services/category-service.js', () => ({
   },
 }));
 
-vi.mock('../src/services/keycloak-group-service.js', () => ({
-  keycloakGroupService: {
-    resolveTargetDepartmentPath: (...args: unknown[]) =>
-      mockResolveTargetDepartmentPath(...args),
-    resolveUserGroupPaths: (...args: unknown[]) =>
-      mockResolveUserGroupPaths(...args),
-    listGroups: (...args: unknown[]) => mockListGroups(...args),
-  },
-}));
+vi.mock('../src/services/keycloak-group-service.js', async () => {
+  const actual = await vi.importActual<
+    typeof import('../src/services/keycloak-group-service.js')
+  >('../src/services/keycloak-group-service.js');
+  return {
+    ...actual,
+    keycloakGroupService: {
+      resolveTargetDepartmentPath: (...args: unknown[]) =>
+        mockResolveTargetDepartmentPath(...args),
+      resolveUserGroupPaths: (...args: unknown[]) =>
+        mockResolveUserGroupPaths(...args),
+      listGroups: (...args: unknown[]) => mockListGroups(...args),
+    },
+  };
+});
 
 vi.mock('../src/services/request-service.js', async () => {
   const actual = await vi.importActual<
@@ -206,6 +212,25 @@ describe('SDLC Step 5 - Acceptance Criteria (Given/When/Then) & Vietnamese AI Su
     expect(res.body.code).toBe('INVALID_TARGET_DEPARTMENT');
   });
 
+  it('[Given/When/Then - Kiểm tra đầu vào #5b] Given danh mục thuộc KETOAN nhưng gửi target_department CTSV, Then trả về HTTP 400 CATEGORY_DEPARTMENT_MISMATCH', async () => {
+    mockGetCategoryByCode.mockResolvedValueOnce({
+      code: 'KETOAN_HOC_PHI',
+      name: 'Xác nhận & tra soát học phí',
+      department: 'KETOAN',
+      requires_evidence: false,
+    });
+
+    const res = await request(app).post('/api/requests').send({
+      title: 'Xin tra soát học phí học kỳ 2',
+      category: 'KETOAN_HOC_PHI',
+      target_department: 'CTSV',
+      priority: 'NORMAL',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('CATEGORY_DEPARTMENT_MISMATCH');
+  });
+
   it('[Given/When/Then - Kiểm tra đầu vào #6 & #7] Given cán bộ xử lý đơn, When từ chối thiếu lý do trả về 400 REJECT_REASON_REQUIRED; When đơn đã duyệt trả về 409 ALREADY_PROCESSED', async () => {
     currentMockUser = {
       preferred_username: 'canbo',
@@ -305,16 +330,16 @@ describe('SDLC Step 5 - Acceptance Criteria (Given/When/Then) & Vietnamese AI Su
     const departments = [
       { id: 'd1', name: 'KETOAN', path: 'KETOAN', display_label: 'KETOAN', parent_path: null, depth: 0, sub_group_count: 0 },
       { id: 'd2', name: 'CTSV', path: 'CTSV', display_label: 'CTSV', parent_path: null, depth: 0, sub_group_count: 0 },
-      { id: 'd3', name: 'DAOTAO', path: 'DAOTAO', display_label: 'DAOTAO', parent_path: null, depth: 0, sub_group_count: 0 },
-      { id: 'd4', name: 'CSVC', path: 'CSVC', display_label: 'CSVC', parent_path: null, depth: 0, sub_group_count: 0 },
-      { id: 'd5', name: 'CNTT', path: 'CNTT', display_label: 'CNTT', parent_path: null, depth: 0, sub_group_count: 0 },
+      { id: 'd3', name: 'Phòng khoa học và QLSV', path: 'Phòng khoa học và QLSV', display_label: 'Phòng khoa học và QLSV', parent_path: null, depth: 0, sub_group_count: 0 },
+      { id: 'd4', name: 'Phòng Quản trị Thiết bị', path: 'Phòng Quản trị Thiết bị', display_label: 'Phòng Quản trị Thiết bị', parent_path: null, depth: 0, sub_group_count: 0 },
+      { id: 'd5', name: 'Chăm sóc sắc đẹp', path: 'Chăm sóc sắc đẹp', display_label: 'Chăm sóc sắc đẹp', parent_path: null, depth: 0, sub_group_count: 0 },
     ];
     const categories = [
       { id: 'c1', code: 'KETOAN_HOC_PHI', name: 'Học phí & Biên lai', department: 'KETOAN', sla_hours: 24, requires_evidence: true, is_active: true, sort_order: 1, created_at: now, updated_at: now },
       { id: 'c2', code: 'CTSV_XAC_NHAN', name: 'Giấy xác nhận & BHYT', department: 'CTSV', sla_hours: 24, requires_evidence: false, is_active: true, sort_order: 2, created_at: now, updated_at: now },
-      { id: 'c3', code: 'DAOTAO_HOC_VU', name: 'Phúc khảo & Bảng điểm tín chỉ', department: 'DAOTAO', sla_hours: 24, requires_evidence: false, is_active: true, sort_order: 3, created_at: now, updated_at: now },
-      { id: 'c4', code: 'CSVC_SUA_CHUA', name: 'Báo hỏng thiết bị & Phòng học', department: 'CSVC', sla_hours: 8, requires_evidence: true, is_active: true, sort_order: 4, created_at: now, updated_at: now },
-      { id: 'c5', code: 'CNTT_TAI_KHOAN', name: 'Hỗ trợ Wifi & Tài khoản SSO', department: 'CNTT', sla_hours: 8, requires_evidence: false, is_active: true, sort_order: 5, created_at: now, updated_at: now },
+      { id: 'c3', code: 'KHQLSV_PHUC_KHAO', name: 'Phúc khảo & Bảng điểm tín chỉ', department: 'Phòng khoa học và QLSV', sla_hours: 24, requires_evidence: false, is_active: true, sort_order: 3, created_at: now, updated_at: now },
+      { id: 'c4', code: 'QTTB_SUA_CHUA', name: 'Báo hỏng thiết bị & Phòng học', department: 'Phòng Quản trị Thiết bị', sla_hours: 8, requires_evidence: true, is_active: true, sort_order: 4, created_at: now, updated_at: now },
+      { id: 'c5', code: 'CSSD_THUC_HANH', name: 'Đăng ký lịch phòng thực hành thẩm mỹ', department: 'Chăm sóc sắc đẹp', sla_hours: 24, requires_evidence: false, is_active: true, sort_order: 5, created_at: now, updated_at: now },
     ];
 
     const goldenDataset = [
@@ -335,41 +360,53 @@ describe('SDLC Step 5 - Acceptance Criteria (Given/When/Then) & Vietnamese AI Su
       {
         title: 'Đơn xin phúc khảo điểm thi học phần Cấu trúc dữ liệu',
         description: 'Em muốn kiểm tra lại bảng điểm tín chỉ và lịch thi học kỳ vừa qua.',
-        expectedDept: 'DAOTAO',
-        expectedCat: 'DAOTAO_HOC_VU',
+        expectedDept: 'Phòng khoa học và QLSV',
+        expectedCat: 'KHQLSV_PHUC_KHAO',
         expectedPriority: 'HIGH',
       },
       {
         title: 'Khẩn cấp: Chập điện và hỏng máy chiếu tại giảng đường B302',
         description: 'Mất điện toàn bộ phòng học ngay trong ngày thi.',
-        expectedDept: 'CSVC',
-        expectedCat: 'CSVC_SUA_CHUA',
+        expectedDept: 'Phòng Quản trị Thiết bị',
+        expectedCat: 'QTTB_SUA_CHUA',
         expectedPriority: 'URGENT',
       },
       {
-        title: 'Lỗi không đăng nhập được tài khoản SSO Keycloak và mất kết nối Wifi',
-        description: 'Xin trung tâm CNTT cấp lại mật khẩu email sinh viên.',
-        expectedDept: 'CNTT',
-        expectedCat: 'CNTT_TAI_KHOAN',
+        title: 'Đăng ký lịch phòng thực hành chăm sóc da thẩm mỹ tuần này',
+        description: 'Nhóm sinh viên cần mượn dụng cụ spa và mỹ phẩm thực hành gấp trong tuần này.',
+        expectedDept: 'Chăm sóc sắc đẹp',
+        expectedCat: 'CSSD_THUC_HANH',
         expectedPriority: 'HIGH',
       },
     ];
 
-    const start = performance.now();
-    for (const sample of goldenDataset) {
-      const suggestion = analyzeRequestWithRuleEngine({
-        title: sample.title,
-        description: sample.description,
-        departments,
-        categories,
-      });
+    // Warmup JIT & config cache trước khi đo độ trễ ổn định
+    analyzeRequestWithRuleEngine({
+      title: goldenDataset[0].title,
+      description: goldenDataset[0].description,
+      departments,
+      categories,
+    });
 
-      expect(suggestion.suggested_department).toBe(sample.expectedDept);
-      expect(suggestion.suggested_category_code).toBe(sample.expectedCat);
-      expect(suggestion.suggested_priority).toBe(sample.expectedPriority);
-      expect(suggestion.confidence).toBeGreaterThanOrEqual(0.65);
+    const rounds = 5;
+    const start = performance.now();
+    for (let r = 0; r < rounds; r += 1) {
+      for (const sample of goldenDataset) {
+        const suggestion = analyzeRequestWithRuleEngine({
+          title: sample.title,
+          description: sample.description,
+          departments,
+          categories,
+        });
+
+        expect(suggestion.suggested_department).toBe(sample.expectedDept);
+        expect(suggestion.suggested_category_code).toBe(sample.expectedCat);
+        expect(suggestion.suggested_priority).toBe(sample.expectedPriority);
+        expect(suggestion.confidence).toBeGreaterThanOrEqual(0.65);
+      }
     }
-    const avgLatencyMs = (performance.now() - start) / goldenDataset.length;
+    const avgLatencyMs =
+      (performance.now() - start) / (goldenDataset.length * rounds);
     expect(avgLatencyMs).toBeLessThan(5);
   });
 });

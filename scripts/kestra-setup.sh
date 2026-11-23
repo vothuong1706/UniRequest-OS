@@ -6,10 +6,25 @@
 set -eu
 
 if [ -f ./.env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./.env
-  set +a
+  CR=$(printf '\r')
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%"$CR"}
+    case "$line" in
+      ''|\#*) continue ;;
+      *=*)
+        key=${line%%=*}
+        val=${line#*=}
+        case "$key" in
+          ''|*[!A-Za-z0-9_]*|[0-9]*) continue ;;
+        esac
+        case "$val" in
+          \"*\") val=${val#\"}; val=${val%\"} ;;
+          \'*\') val=${val#\'}; val=${val%\'} ;;
+        esac
+        export "$key=$val"
+        ;;
+    esac
+  done < ./.env
 fi
 
 KESTRA_URL="${KESTRA_URL:-http://localhost:8085}"

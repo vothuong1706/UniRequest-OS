@@ -7,6 +7,9 @@ const mockGetRequestById = vi.fn();
 const mockRecordAuditLog = vi.fn();
 const mockCreateAndDispatch = vi.fn();
 const mockEmitRequestUpdated = vi.fn();
+const mockGetDepartmentMemberEmails = vi.fn();
+const mockSendSlaAlertEmail = vi.fn();
+const mockSendDailyReportEmail = vi.fn();
 
 vi.mock('../src/config/database.js', () => ({
   query: (...args: unknown[]) => mockQuery(...args),
@@ -39,6 +42,21 @@ vi.mock('../src/realtime/socket-server.js', () => ({
   emitRequestUpdated: (...args: unknown[]) => mockEmitRequestUpdated(...args),
 }));
 
+vi.mock('../src/services/keycloak-group-service.js', () => ({
+  keycloakGroupService: {
+    getDepartmentMemberEmails: (...args: unknown[]) =>
+      mockGetDepartmentMemberEmails(...args),
+  },
+}));
+
+vi.mock('../src/services/mail-service.js', () => ({
+  mailService: {
+    sendSlaAlertEmail: (...args: unknown[]) => mockSendSlaAlertEmail(...args),
+    sendDailyReportEmail: (...args: unknown[]) =>
+      mockSendDailyReportEmail(...args),
+  },
+}));
+
 import { createApp } from '../src/app.js';
 import { config } from '../src/config/environment.js';
 
@@ -52,6 +70,20 @@ describe('POST /api/internal/kestra/sla-alert', () => {
     mockRecordAuditLog.mockReset();
     mockCreateAndDispatch.mockReset();
     mockEmitRequestUpdated.mockReset();
+    mockGetDepartmentMemberEmails.mockReset();
+    mockSendSlaAlertEmail.mockReset();
+    mockSendDailyReportEmail.mockReset();
+    mockGetDepartmentMemberEmails.mockResolvedValue(['canbo@gmail.com']);
+    mockSendSlaAlertEmail.mockResolvedValue({
+      sent: true,
+      skipped: false,
+      recipients: ['canbo@gmail.com'],
+    });
+    mockSendDailyReportEmail.mockResolvedValue({
+      sent: true,
+      skipped: false,
+      recipients: ['admin@gmail.com'],
+    });
   });
 
   it('trả về HTTP 401 khi thiếu hoặc sai header x-kestra-key', async () => {
@@ -142,12 +174,19 @@ describe('POST /api/internal/kestra/sla-alert', () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({
+    expect(res.body).toMatchObject({
       success: true,
       dispatched: true,
       request_id: validId,
       department: 'Lớp/K11A1',
+      email: {
+        sent: true,
+        skipped: false,
+        recipients_count: 1,
+      },
     });
+    expect(mockGetDepartmentMemberEmails).toHaveBeenCalledWith('Lớp/K11A1');
+    expect(mockSendSlaAlertEmail).toHaveBeenCalledTimes(1);
 
     expect(mockRecordAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -170,6 +209,57 @@ describe('POST /api/internal/kestra/sla-alert', () => {
       'sv01',
       'STATUS_CHANGED',
       'Lớp/K11A1'
+    );
+  });
+
+  it('POST /api/internal/kestra/daily-report-notify chặn 401 khi sai key và gửi email báo cáo khi hợp lệ', async () => {
+    const unauthorized = await request(app)
+      .post('/api/internal/kestra/daily-report-notify')
+      .send({ total_active: 10 });
+    expect(unauthorized.status).toBe(401);
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          target_department: 'KETOAN',
+          total_requests: 6,
+          pending_count: 2,
+          approved_count: 3,
+          rejected_count: 1,
+          urgent_count: 1,
+          avg_resolution_hours: 4.5,
+        },
+      ],
+    });
+
+    const okRes = await request(app)
+      .post('/api/internal/kestra/daily-report-notify')
+      .set('x-kestra-key', config.kestra.webhookKey)
+      .send({
+        total_active: 22,
+        total_pending: 8,
+        total_approved: 12,
+        total_rejected: 2,
+        minio_key: 'unirequest-files/reports/daily/test.csv',
+        execution_id: 'exec-daily-1',
+      });
+
+    expect(okRes.status).toBe(200);
+    expect(okRes.body).toMatchObject({
+      success: true,
+      email: {
+        sent: true,
+        skipped: false,
+        recipients_count: 1,
+      },
+    });
+    expect(mockSendDailyReportEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalActive: 22,
+        totalPending: 8,
+        totalApproved: 12,
+        totalRejected: 2,
+      })
     );
   });
 });

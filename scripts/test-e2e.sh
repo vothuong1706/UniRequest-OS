@@ -5,10 +5,25 @@
 set -euo pipefail
 
 if [ -f ./.env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./.env
-  set +a
+  CR=$(printf '\r')
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%"$CR"}
+    case "$line" in
+      ''|\#*) continue ;;
+      *=*)
+        key=${line%%=*}
+        val=${line#*=}
+        case "$key" in
+          ''|*[!A-Za-z0-9_]*|[0-9]*) continue ;;
+        esac
+        case "$val" in
+          \"*\") val=${val#\"}; val=${val%\"} ;;
+          \'*\') val=${val#\'}; val=${val%\'} ;;
+        esac
+        export "$key=$val"
+        ;;
+    esac
+  done < ./.env
 fi
 
 GREEN='\033[0;32m'
@@ -80,6 +95,13 @@ if [ "$UNAUTH_DEPT_CODE" = "401" ]; then
   echo -e "${GREEN}✔ API /api/departments chặn truy cập trái phép đúng chuẩn (HTTP 401)${NC}"
 else
   echo -e "${RED}✘ Kỳ vọng HTTP 401 cho /api/departments khi thiếu JWT, nhưng nhận HTTP $UNAUTH_DEPT_CODE${NC}"
+  exit 1
+fi
+UNAUTH_AI_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/ai/config)
+if [ "$UNAUTH_AI_CODE" = "401" ]; then
+  echo -e "${GREEN}✔ API /api/ai/config chặn truy cập trái phép đúng chuẩn (HTTP 401)${NC}"
+else
+  echo -e "${RED}✘ Kỳ vọng HTTP 401 cho /api/ai/config khi thiếu JWT, nhưng nhận HTTP $UNAUTH_AI_CODE${NC}"
   exit 1
 fi
 for internal_path in /api/internal/kestra/sla-alert /api/INTERNAL/kestra/sla-alert; do

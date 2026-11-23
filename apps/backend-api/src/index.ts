@@ -6,6 +6,7 @@ import { checkDatabaseConnection, ensureTablesExist, pool } from './config/datab
 import { initMinioBucket } from './config/minio-client.js';
 import { getKeycloakPublicKey } from './middlewares/auth-middleware.js';
 import { initSocketServer } from './realtime/socket-server.js';
+import { keycloakGroupService } from './services/keycloak-group-service.js';
 import { requestService } from './services/request-service.js';
 import { seedDemoDataIfEmpty } from './utils/seed-demo-data.js';
 
@@ -21,6 +22,14 @@ const startServer = async () => {
     await ensureTablesExist();
     await seedDemoDataIfEmpty();
     await requestService.backfillAuditHashChain();
+    const senderStats = await requestService.backfillSenderGroups((username) =>
+      keycloakGroupService.getUserPrimaryGroupLabel(username)
+    );
+    if (senderStats.updated > 0) {
+      console.log(
+        `[Keycloak] Đã đồng bộ nhãn Lớp/Nhóm người gửi cho ${senderStats.updated} hồ sơ từ Keycloak.`
+      );
+    }
   } else {
     console.warn('⚠️  Cảnh báo: Chưa thể kết nối PostgreSQL. Backend sẽ tiếp tục chạy và thử lại khi có request.');
   }

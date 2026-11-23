@@ -7,7 +7,10 @@ import {
 } from '../realtime/socket-server.js';
 import { aiTriageService } from '../services/ai-triage-service.js';
 import { categoryService } from '../services/category-service.js';
-import { keycloakGroupService } from '../services/keycloak-group-service.js';
+import {
+  extractPrimaryGroupLabel,
+  keycloakGroupService,
+} from '../services/keycloak-group-service.js';
 import { notificationService } from '../services/notification-service.js';
 import {
   canReviewRequest,
@@ -163,10 +166,30 @@ export class RequestController {
           ? custom_category_label.trim().slice(0, 120)
           : undefined;
 
-      const trimmedDepartment =
+      const rawDeptTrimmed =
         typeof rawTargetDepartment === 'string'
           ? rawTargetDepartment.trim().replace(/^\/+/, '')
           : '';
+      const categoryDepartment =
+        categoryCode !== 'OTHER' && matchedCategory?.department
+          ? matchedCategory.department.trim().replace(/^\/+/, '')
+          : '';
+
+      if (
+        categoryDepartment &&
+        rawDeptTrimmed &&
+        rawDeptTrimmed !== categoryDepartment &&
+        !rawDeptTrimmed.startsWith(`${categoryDepartment}/`)
+      ) {
+        res.status(400).json({
+          success: false,
+          code: 'CATEGORY_DEPARTMENT_MISMATCH',
+          message: `Loại yêu cầu "${matchedCategory?.name ?? categoryCode}" thuộc phòng ban "${categoryDepartment}".`,
+        });
+        return;
+      }
+
+      const trimmedDepartment = categoryDepartment || rawDeptTrimmed;
       if (!trimmedDepartment || trimmedDepartment.length > 150) {
         res.status(400).json({
           success: false,
@@ -188,6 +211,16 @@ export class RequestController {
         return;
       }
 
+      const resolvedUserGroupsRaw = Array.isArray(user.groups)
+        ? await keycloakGroupService.resolveUserGroupPaths(user.groups)
+        : [];
+      const resolvedUserGroups = Array.isArray(resolvedUserGroupsRaw)
+        ? resolvedUserGroupsRaw
+        : [];
+      const senderGroupLabel =
+        extractPrimaryGroupLabel(resolvedUserGroups) ??
+        extractPrimaryGroupLabel(user.groups);
+
       const newRequest = await requestService.createRequest(
         {
           title: trimmedTitle,
@@ -195,6 +228,7 @@ export class RequestController {
           category: categoryCode,
           custom_category_label: cleanCustomLabel,
           target_department: resolvedDepartment.canonicalPath,
+          sender_group: senderGroupLabel,
           priority,
           attachment_url: canonicalAttachmentUrl,
         },

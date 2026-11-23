@@ -194,3 +194,29 @@ CREATE TRIGGER trg_push_subscriptions_updated_at
     BEFORE UPDATE ON push_subscriptions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- 8. Bảng request_embeddings (Chỉ mục Vector ngữ nghĩa trên PostgreSQL 16 cho Trợ lý AI [I])
+CREATE TABLE IF NOT EXISTS request_embeddings (
+    request_id UUID PRIMARY KEY REFERENCES requests(id) ON DELETE CASCADE,
+    content_hash VARCHAR(64) NOT NULL,
+    source_text TEXT NOT NULL,
+    provider VARCHAR(40) NOT NULL DEFAULT 'local-ngram-v1',
+    dimensions INTEGER NOT NULL DEFAULT 256,
+    embedding REAL[] NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_embeddings_updated_at
+    ON request_embeddings(updated_at DESC);
+
+ALTER TABLE requests
+    ADD COLUMN IF NOT EXISTS sender_group VARCHAR(150);
+
+CREATE INDEX IF NOT EXISTS idx_requests_sender_group
+    ON requests(sender_group);
+
+DROP TRIGGER IF EXISTS trg_request_embeddings_updated_at ON request_embeddings;
+CREATE TRIGGER trg_request_embeddings_updated_at
+    BEFORE UPDATE ON request_embeddings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

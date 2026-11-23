@@ -248,9 +248,20 @@ services:
       AI_ENABLED: ${AI_ENABLED:-true}
       OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
-      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-3500}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-45000}
+      AI_CONFIG_FILE: ${AI_CONFIG_FILE:-/usr/src/app/ai-config/assistant-config.json}
+      SMTP_ENABLED: ${SMTP_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_ALERT_TO: ${SMTP_ALERT_TO:-}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-http://localhost:3000}
     volumes:
       - ./config/seed:/usr/src/app/seed:ro
+      - ./config/ai:/usr/src/app/ai-config:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:

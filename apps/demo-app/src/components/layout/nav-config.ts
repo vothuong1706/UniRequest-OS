@@ -4,11 +4,13 @@ import {
   FilePlus2,
   LayoutDashboard,
   ShieldCheck,
+  Sparkles,
   Tags,
   type LucideIcon,
 } from 'lucide-react';
 
-export type PageId = 'dashboard' | 'create' | 'history' | 'manage' | 'categories';
+export type PageId =
+  'dashboard' | 'create' | 'history' | 'assistant' | 'manage' | 'categories';
 
 export interface NavItem {
   id: PageId;
@@ -36,6 +38,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Yêu cầu của tôi',
     description: 'Theo dõi trạng thái yêu cầu bạn đã gửi',
     icon: ClipboardList,
+  },
+  {
+    id: 'assistant',
+    label: 'Trợ lý AI',
+    description: 'Tra cứu và rà soát hồ sơ thông minh',
+    icon: Sparkles,
   },
   {
     id: 'manage',

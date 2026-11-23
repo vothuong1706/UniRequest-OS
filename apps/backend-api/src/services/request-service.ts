@@ -311,6 +311,31 @@ export class RequestService {
     }
   }
 
+  async backfillSenderGroups(
+    resolver: (username: string) => Promise<string | null>
+  ): Promise<{ total: number; updated: number }> {
+    const missingRes = await query(
+      `SELECT DISTINCT created_by FROM requests WHERE sender_group IS NULL;`
+    );
+    const usernames = (missingRes.rows as Array<{ created_by: string }>)
+      .map((r) => r.created_by)
+      .filter(Boolean);
+
+    let updated = 0;
+    for (const username of usernames) {
+      const label = await resolver(username);
+      if (!label) continue;
+      const res = await query(
+        `UPDATE requests
+         SET sender_group = $1
+         WHERE created_by = $2 AND sender_group IS NULL;`,
+        [label, username]
+      );
+      updated += Number(res.rowCount || 0);
+    }
+    return { total: usernames.length, updated };
+  }
+
   async createRequest(
     dto: CreateRequestDto,
     createdBy: string,
@@ -321,11 +346,12 @@ export class RequestService {
     const priority: RequestPriority = dto.priority ?? 'NORMAL';
     const customLabel = dto.custom_category_label?.trim() || null;
     const targetDepartment = dto.target_department?.trim() || null;
+    const senderGroup = dto.sender_group?.trim() || null;
 
     const sql = `
       INSERT INTO requests
-        (title, description, category, custom_category_label, target_department, priority, created_by, attachment_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (title, description, category, custom_category_label, target_department, sender_group, priority, created_by, attachment_url)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *;
     `;
     const values = [
@@ -334,6 +360,7 @@ export class RequestService {
       category,
       customLabel,
       targetDepartment,
+      senderGroup,
       priority,
       createdBy,
       dto.attachment_url || null,

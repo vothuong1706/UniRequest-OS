@@ -12,7 +12,7 @@ Nhóm chuẩn hóa toàn bộ thao tác khởi dựng hạ tầng và ứng dụ
    - `apps/backend-api/Dockerfile`: Biên dịch mã nguồn TypeScript sang JavaScript trên `node:20-alpine` và khởi chạy máy chủ Express + Socket.IO ở cổng `:4000`.
    - `apps/demo-app/Dockerfile`: Đóng gói ứng dụng React 19 PWA bằng Vite 8, sau đó đưa sang `nginx:alpine` kèm cấu hình `nginx.conf` (Same-Origin Proxy cho `/api` và `/auth`) ở cổng `:3000`.
 3. **Tự động cấu hình hạ tầng khi khởi chạy:**
-   - `postgres` tự chạy 11 tệp SQL trong `config/postgres/init/`.
+   - `postgres` tự chạy 13 tệp SQL trong `config/postgres/init/` (gồm đồng bộ lớp sinh viên `sender_group` và mã băm lịch sử `SHA-256`).
    - `keycloak` tự nạp cấu hình realm, nhóm phòng ban và 4 tài khoản mẫu từ `config/keycloak/realm-export.json`.
    - `kong-init` tự chạy `kong-setup.sh` để đăng ký route `/api`, `/auth`, plugin giới hạn tần suất gọi API và `X-Correlation-ID`.
    - `kestra-init` tự chạy `scripts/kestra-setup.sh` để nạp 3 quy trình YAML dưới namespace `unirequest.dxos`.
@@ -47,7 +47,7 @@ Script [`scripts/test-e2e.sh`](../../scripts/test-e2e.sh) kiểm tra thực tế
 ## 4. Danh mục Sản phẩm Bàn giao (`v1.0.0`)
 
 - [x] **Mã nguồn ứng dụng & cấu hình hạ tầng:** `apps/backend-api`, `apps/demo-app`, `config/` (gồm `config/seed/demo-data.json`), `scripts/`, `docker-compose.yml`, `Makefile`, `.env.example`.
-- [x] **Bộ 74 bài kiểm thử tự động (`14` tệp test):** Chạy qua `make unit-test` đạt **`74/74` PASS (100%)**, kèm `make seed` idempotent (**18/18** chuỗi `SHA-256` hợp lệ).
+- [x] **Bộ 107 bài kiểm thử tự động (`18` tệp test):** Chạy qua `make unit-test` đạt **`107/107` PASS (100%)** (cùng `34/34` Live AI Eval PASS trên dữ liệu thật), kèm `make seed` idempotent (**18/18** chuỗi `SHA-256` hợp lệ).
 - [x] **Hệ thống tài liệu kỹ thuật & hồ sơ dự thi:**
   - Trang chủ & Quản trị FOSS: [`README.md`](../../README.md), [`LICENSE`](../../LICENSE), [`NOTICE`](../../NOTICE), [`CHANGELOG.md`](../../CHANGELOG.md), [`CONTRIBUTING.md`](../../CONTRIBUTING.md), [`SECURITY.md`](../../SECURITY.md)
   - Tài liệu hệ thống: [`docs/README.md`](../README.md), [`docs/architecture.md`](../architecture.md), [`docs/operations.md`](../operations.md), [`docs/uml.md`](../uml.md), [`docs/hoi-dap-hoi-dong.md`](../hoi-dap-hoi-dong.md), [`docs/images/README.md`](../images/README.md)

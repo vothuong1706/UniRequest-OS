@@ -106,7 +106,7 @@ export function AppShell({
           <PwaStatusBanner />
 
           {/* Main page canvas */}
-          <main className="mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6">{children}</main>
+          <main className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6">{children}</main>
         </div>
       </div>
     </div>

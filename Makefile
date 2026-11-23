@@ -82,6 +82,7 @@ lint: ## Kiểm tra Clean Code cho cả Frontend (tsc, eslint, prettier, build) 
 	$(COMPOSE) --env-file .env.example config -q
 	python3 -m json.tool config/keycloak/realm-export.json >/dev/null
 	python3 -m json.tool config/seed/demo-data.json >/dev/null
+	python3 -m json.tool config/ai/assistant-config.json >/dev/null
 	@echo "✅ Toàn bộ kiểm tra Clean Code & Hạ tầng ĐẠT 100%!"
 
 dev-fe: ## Chạy Frontend Vite HMR cục bộ trên cổng 5173 (không đụng Docker Frontend :3000)

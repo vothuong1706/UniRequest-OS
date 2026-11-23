@@ -7,7 +7,7 @@ Thư mục `docs/` tổng hợp toàn bộ tài liệu kỹ thuật của nhóm 
 1. **Giới thiệu bài toán & Cách cài đặt nhanh:** Xem [`README.md`](../README.md) ở thư mục gốc để nắm bài toán tại trường đại học, chức năng của từng nhóm người dùng (**Ai dùng - Dùng cái gì - Dùng như thế nào**) và cách khởi chạy hệ thống.
 2. **Dùng thử trên trình duyệt:** Sau khi chạy `make build`, truy cập <http://localhost:3000> và đăng nhập bằng 4 tài khoản mẫu (`sinhvien`, `sinhvien2`, `canbo`, `giangvien`) trong [`README.md`](../README.md#tài-khoản-dùng-thử-configkeycloakrealm-exportjson).
 3. **Hồ sơ dự thi OLP Phần mềm Nguồn mở 2026:** [`du-thi/README.md`](du-thi/README.md), bảng rà soát 6 tiêu chí phần mềm nguồn mở [`du-thi/pof-checklist.md`](du-thi/pof-checklist.md) và quá trình phát triển [`du-thi/ke-hoach-phat-trien.md`](du-thi/ke-hoach-phat-trien.md).
-4. **Quy trình nghiên cứu, xây dựng và kiểm thử 7 bước SDLC của nhóm (`74/74` bài test):** [`research/README.md`](research/README.md) cùng 7 tài liệu chi tiết từ [`01-phan-tich-yeu-cau.md`](research/01-phan-tich-yeu-cau.md) đến [`07-dong-goi-ban-giao.md`](research/07-dong-goi-ban-giao.md).
+4. **Quy trình nghiên cứu, xây dựng và kiểm thử 7 bước SDLC của nhóm (`107/107` bài test):** [`research/README.md`](research/README.md) cùng 7 tài liệu chi tiết từ [`01-phan-tich-yeu-cau.md`](research/01-phan-tich-yeu-cau.md) đến [`07-dong-goi-ban-giao.md`](research/07-dong-goi-ban-giao.md).
 5. **Thiết kế kiến trúc 3 tầng & Cơ sở dữ liệu PostgreSQL:** [`architecture.md`](architecture.md) và bộ sơ đồ UML tại [`uml.md`](uml.md).
 6. **Hướng dẫn vận hành, quy trình Kestra & Kết quả kiểm thử:** [`operations.md`](operations.md).
 7. **Câu hỏi thường gặp & Giải thích kỹ thuật với Hội đồng:** [`hoi-dap-hoi-dong.md`](hoi-dap-hoi-dong.md) (hoặc bản đồng bộ tại [`du-thi/hoi-dap-hoi-dong.md`](du-thi/hoi-dap-hoi-dong.md)).
@@ -21,7 +21,7 @@ Thư mục `docs/` tổng hợp toàn bộ tài liệu kỹ thuật của nhóm 
 | **Chính sách thư viện & Docker image gốc** | [`architecture.md`](architecture.md#4-danh-mục-công-nghệ-nguồn-mở--chính-sách-giấy-phép-osi) | `git ls-files \| grep -E '(vendor\|node_modules\|third_party)/'` -> rỗng |
 | **Khởi chạy từ mã nguồn qua `.env`** | [`README.md`](../README.md#2-hướng-dẫn-chạy-nhanh-quick-start), [`.env.example`](../.env.example), [`Makefile`](../Makefile) | `make build` (tự tạo `.env` từ `.env.example`) |
 | **Kiến trúc 3 tầng & 4 nhóm chức năng `H-P-D-I`** | [`architecture.md`](architecture.md), [`uml.md`](uml.md), [`docs/images/architecture.png`](images/architecture.png) | Kiểm tra `docs/images/*.svg` trong [CI](../.github/workflows/ci.yml) |
-| **Quy trình nghiên cứu 7 bước SDLC & 74 bài test** | [`research/README.md`](research/README.md), [`operations.md`](operations.md), [`scripts/test-e2e.sh`](../scripts/test-e2e.sh) | `make unit-test` (`74/74`), `make lint`, `make test` (`7/7`) |
+| **Quy trình nghiên cứu 7 bước SDLC & 107 bài test** | [`research/README.md`](research/README.md), [`operations.md`](operations.md), [`scripts/test-e2e.sh`](../scripts/test-e2e.sh) | `make unit-test` (`107/107`), `make lint`, `make test` (`7/7`) |
 | **Chạy thử qua Internet HTTPS & Sao lưu** | [`operations.md`](operations.md#1-hướng-dẫn-cài-đặt-từ-máy-sạch--mở-demo-https-qua-internet), [`scripts/internet-demo.sh`](../scripts/internet-demo.sh) | `bash scripts/internet-demo.sh`, `make backup && make restore` |
 | **Hỏi - Đáp kỹ thuật với Hội đồng** | [`hoi-dap-hoi-dong.md`](hoi-dap-hoi-dong.md), [`du-thi/hoi-dap-hoi-dong.md`](du-thi/hoi-dap-hoi-dong.md) | 10 câu hỏi kỹ thuật kèm đường dẫn tới mã nguồn & bài test |
 | **Danh mục hình ảnh & Minh bạch AI** | [`images/README.md`](images/README.md), [`NOTICE`](../NOTICE) | Danh sách 12 ảnh chụp giao diện thực tế & phần có dùng công cụ AI |
@@ -35,7 +35,7 @@ git ls-files | grep -E '(vendor|third_party|node_modules)/' && echo "VI PHẠM" 
 # 2. Kiểm tra kiểu dữ liệu TypeScript, ESLint, Prettier, đóng gói PWA và cấu hình
 make lint
 
-# 3. Chạy 74 bài unit test (chạy độc lập, không cần bật Docker)
+# 3. Chạy 107 bài unit test (chạy độc lập, không cần bật Docker)
 make unit-test
 
 # 4. Khởi dựng toàn bộ container và chạy kiểm thử tích hợp E2E 7 bước

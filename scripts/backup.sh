@@ -10,11 +10,26 @@ STAMP="$(TZ="$TZ_OPT" date +%Y%m%d_%H%M%S)"
 BACKUP_ROOT="${BACKUP_ROOT:-backups}"
 BACKUP_DIR="${BACKUP_ROOT}/${STAMP}"
 
-if [ -f .env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./.env
-  set +a
+if [ -f ./.env ]; then
+  CR=$(printf '\r')
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%"$CR"}
+    case "$line" in
+      ''|\#*) continue ;;
+      *=*)
+        key=${line%%=*}
+        val=${line#*=}
+        case "$key" in
+          ''|*[!A-Za-z0-9_]*|[0-9]*) continue ;;
+        esac
+        case "$val" in
+          \"*\") val=${val#\"}; val=${val%\"} ;;
+          \'*\') val=${val#\'}; val=${val%\'} ;;
+        esac
+        export "$key=$val"
+        ;;
+    esac
+  done < ./.env
 fi
 
 PG_USER="${POSTGRES_USER:-keycloak}"

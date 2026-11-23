@@ -18,7 +18,7 @@ Thư mục `docs/du-thi/` tổng hợp các tài liệu phục vụ cuộc thi *
 
 - **Trang chủ dự án & Hướng dẫn chạy nhanh:** [`README.md`](../../README.md)
 - **Tổng quan hệ thống tài liệu:** [`docs/README.md`](../README.md)
-- **Quy trình nghiên cứu & phát triển 7 bước SDLC (`74/74` bài test):** [`docs/research/README.md`](../research/README.md)
+- **Quy trình nghiên cứu & phát triển 7 bước SDLC (`107/107` bài test):** [`docs/research/README.md`](../research/README.md)
   - [Bước 1: Phân tích yêu cầu bài toán đại học](../research/01-phan-tich-yeu-cau.md)
   - [Bước 2: Thiết kế kiến trúc 3 tầng & CSDL 7 bảng](../research/02-thiet-ke-kien-truc.md)
   - [Bước 3: Lập trình từng module & Giao diện người dùng](../research/03-lap-trinh-tung-module.md)

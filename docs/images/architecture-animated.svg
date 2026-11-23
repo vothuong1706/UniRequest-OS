@@ -57,7 +57,7 @@
   <text x="307" y="380" text-anchor="middle" class="f tiny">+ Nginx Same-Origin</text>
   <line x1="250" y1="398" x2="364" y2="398" stroke="#99f6e4" stroke-width="1.2" />
   <text x="307" y="420" text-anchor="middle" class="f tiny">Cổng duy nhất mở ra ngoài</text>
-  <text x="307" y="446" text-anchor="middle" class="f sub">Kiểm JWT RS256 ở biên</text>
+  <text x="307" y="446" text-anchor="middle" class="f sub">Chặn /api/internal (403)</text>
   <text x="307" y="466" text-anchor="middle" class="f sub">Gắn X-Correlation-ID</text>
   <text x="307" y="486" text-anchor="middle" class="f sub">Rate-Limit bảo vệ API</text>
   <text x="307" y="506" text-anchor="middle" class="f sub">Proxy /api, /auth &amp; WS</text>
@@ -110,11 +110,11 @@
   <!-- [I] Intelligence -->
   <rect x="914" y="212" width="140" height="134" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.5" />
   <text x="984" y="232" text-anchor="middle" class="f title" fill="#166534">[I] Trí tuệ</text>
-  <text x="984" y="254" text-anchor="middle" class="f tiny">Gợi ý phân tuyến AI</text>
-  <text x="984" y="272" text-anchor="middle" class="f tiny">Tóm tắt đơn cho Ban</text>
-  <text x="984" y="290" text-anchor="middle" class="f tiny">Hybrid Ollama LLM</text>
-  <text x="984" y="308" text-anchor="middle" class="f tiny">Local Vietnamese NLP</text>
-  <text x="984" y="326" text-anchor="middle" class="f tiny">Đối chiếu DB thực tế</text>
+  <text x="984" y="254" text-anchor="middle" class="f tiny">Trợ lý AI tra cứu hồ sơ</text>
+  <text x="984" y="272" text-anchor="middle" class="f tiny">Rà soát tồn đọng &amp; SLA</text>
+  <text x="984" y="290" text-anchor="middle" class="f tiny">Hybrid SQL + Vector PG</text>
+  <text x="984" y="308" text-anchor="middle" class="f tiny">Ollama + VN NLP có dấu</text>
+  <text x="984" y="326" text-anchor="middle" class="f tiny">Cấu hình Prompt JSON ngoài</text>
 
   <!-- TIER 1: LOI KHONG GIAO DIEN (HEADLESS CORE) -->
   <rect x="442" y="376" width="628" height="354" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4" />
@@ -149,14 +149,14 @@
 
   <rect x="904" y="522" width="146" height="82" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.6" />
   <text x="977" y="546" text-anchor="middle" class="f title">MinIO S3 (Silo)</text>
-  <text x="977" y="564" text-anchor="middle" class="f tiny">Kho tệp đính kèm</text>
+  <text x="977" y="564" text-anchor="middle" class="f tiny">Bucket Private + HMAC</text>
   <text x="977" y="580" text-anchor="middle" class="f tiny">&amp; Báo cáo CSV ngày</text>
 
   <!-- Row 3 of Tier 1 -->
   <rect x="464" y="628" width="184" height="82" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="1.6" />
-  <text x="556" y="652" text-anchor="middle" class="f title">AI Triage Engine [I]</text>
-  <text x="556" y="670" text-anchor="middle" class="f tiny">Hybrid Ollama LLM</text>
-  <text x="556" y="686" text-anchor="middle" class="f tiny">+ Local Vietnamese NLP</text>
+  <text x="556" y="652" text-anchor="middle" class="f title">AI Assistant Engine [I]</text>
+  <text x="556" y="670" text-anchor="middle" class="f tiny">Hybrid SQL + Vector PG</text>
+  <text x="556" y="686" text-anchor="middle" class="f tiny">Ollama + VN NLP có dấu</text>
 
   <rect x="684" y="628" width="184" height="82" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
   <text x="776" y="652" text-anchor="middle" class="f title">Quan sát &amp; Kiểm thử</text>
@@ -165,7 +165,7 @@
 
   <rect x="904" y="628" width="146" height="82" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" />
   <text x="977" y="652" text-anchor="middle" class="f title">Backup &amp; Restore</text>
-  <text x="977" y="670" text-anchor="middle" class="f tiny">PostgreSQL + MinIO</text>
+  <text x="977" y="670" text-anchor="middle" class="f tiny">3 CSDL + MinIO</text>
   <text x="977" y="686" text-anchor="middle" class="f tiny">Kiểm chứng SHA256SUMS</text>
 
   <!-- RIGHT EXTERNAL: KENH NGOAI -->

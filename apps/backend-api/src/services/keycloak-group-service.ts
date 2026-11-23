@@ -12,9 +12,30 @@ interface KeycloakGroupRepresentation {
 
 const CACHE_TTL_MS = 15_000;
 
+/**
+ * Rút tên nhãn ngắn của Lớp / Nhóm từ danh sách đường dẫn Group Keycloak.
+ * Ví dụ: ["/Lớp/K11A1"] -> "K11A1", ["/Lớp/k11A2"] -> "k11A2", ["/CTSV"] -> "CTSV".
+ */
+export function extractPrimaryGroupLabel(groups: string[] = []): string | null {
+  const cleaned = groups
+    .map((g) => g.trim().replace(/^\/+/, '').replace(/\/+$/, ''))
+    .filter((g) => g.length > 0);
+  if (cleaned.length === 0) return null;
+
+  // Ưu tiên group con (như Lớp/K11A1) trước group gốc
+  const nested = cleaned.find((g) => g.includes('/'));
+  const picked = nested ?? cleaned[0];
+  const segments = picked.split('/').filter(Boolean);
+  return segments[segments.length - 1] ?? null;
+}
+
 export class KeycloakGroupService {
   private cachedGroups: DepartmentGroupItem[] = [];
   private lastFetchTime = 0;
+  private userGroupLabelCache = new Map<
+    string,
+    { label: string | null; fetchedAt: number }
+  >();
 
   private async fetchAdminToken(): Promise<string> {
     const baseUrl = config.keycloak.adminUrl.replace(/\/+$/, '');
@@ -243,6 +264,104 @@ export class KeycloakGroupService {
       canonicalPath: clean,
       checkedAgainstKeycloak: false,
     };
+  }
+
+  /**
+   * Tra cứu nhãn Lớp / Nhóm thực tế (vd: "K11A1", "k11A2") của một tài khoản từ Keycloak Admin API.
+   * Dùng để đồng bộ sender_group cho các hồ sơ cũ/mẫu mà không hardcode.
+   */
+  async getUserPrimaryGroupLabel(username: string): Promise<string | null> {
+    const cleanUsername = username.trim();
+    if (!cleanUsername) return null;
+
+    const now = Date.now();
+    const cached = this.userGroupLabelCache.get(cleanUsername);
+    if (cached && now - cached.fetchedAt < 60_000) {
+      return cached.label;
+    }
+
+    try {
+      const token = await this.fetchAdminToken();
+      const baseUrl = config.keycloak.adminUrl.replace(/\/+$/, '');
+      const realm = encodeURIComponent(config.keycloak.realm);
+      const userRes = await fetch(
+        `${baseUrl}/admin/realms/${realm}/users?username=${encodeURIComponent(cleanUsername)}&exact=true`,
+        {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        }
+      );
+      if (!userRes.ok) return null;
+
+      const users = (await userRes.json()) as Array<{ id?: string; username?: string }>;
+      const matched = users.find(
+        (u) => u.username?.toLowerCase() === cleanUsername.toLowerCase()
+      );
+      if (!matched?.id) {
+        this.userGroupLabelCache.set(cleanUsername, { label: null, fetchedAt: now });
+        return null;
+      }
+
+      const grpRes = await fetch(
+        `${baseUrl}/admin/realms/${realm}/users/${encodeURIComponent(matched.id)}/groups`,
+        {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        }
+      );
+      if (!grpRes.ok) return null;
+
+      const groups = (await grpRes.json()) as Array<{ name?: string; path?: string }>;
+      const paths = groups
+        .map((g) => g.path || g.name || '')
+        .filter((item) => item.length > 0);
+      const label = extractPrimaryGroupLabel(paths);
+      this.userGroupLabelCache.set(cleanUsername, { label, fetchedAt: now });
+      return label;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Tra cứu danh sách email thực tế của các cán bộ / giảng viên thuộc một Ban trong Keycloak.
+   * Trả về mảng rỗng nếu không tìm thấy nhóm hoặc không gọi được Keycloak Admin API.
+   */
+  async getDepartmentMemberEmails(departmentPath?: string | null): Promise<string[]> {
+    const clean = (departmentPath || '').trim().replace(/^\/+/, '');
+    if (!clean) return [];
+
+    try {
+      const groups = await this.listGroups();
+      const matched = groups.find(
+        (g) =>
+          g.path.toLowerCase() === clean.toLowerCase() ||
+          g.name.toLowerCase() === clean.toLowerCase()
+      );
+      if (!matched?.id) return [];
+
+      const token = await this.fetchAdminToken();
+      const baseUrl = config.keycloak.adminUrl.replace(/\/+$/, '');
+      const realm = encodeURIComponent(config.keycloak.realm);
+      const res = await fetch(
+        `${baseUrl}/admin/realms/${realm}/groups/${encodeURIComponent(matched.id)}/members?max=100`,
+        {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        }
+      );
+      if (!res.ok) return [];
+
+      const members = (await res.json()) as Array<{
+        email?: string;
+        enabled?: boolean;
+      }>;
+      const emails = members
+        .filter((m) => m.enabled !== false && typeof m.email === 'string')
+        .map((m) => m.email!.trim())
+        .filter((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+
+      return Array.from(new Set(emails));
+    } catch {
+      return [];
+    }
   }
 }
 

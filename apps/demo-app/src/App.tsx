@@ -18,6 +18,7 @@ import type { PageId } from '@/components/layout/nav-config';
 import { useTheme } from '@/components/theme/theme-context';
 import { ThemeProvider } from '@/components/theme/theme-provider';
 import { LoginScreen } from '@/features/auth/components/login-screen';
+import { AiAssistantView } from '@/features/assistant/components/ai-assistant-view';
 import { CategoriesView } from '@/features/categories/components/categories-view';
 import { DashboardView } from '@/features/dashboard/components/dashboard-view';
 import { NotificationCenter } from '@/features/notifications/components/notification-center';
@@ -622,6 +623,15 @@ function PortalWorkspace() {
                 setConfirmTarget({ request, nextStatus })
               }
               onDeleteRequests={(ids) => handleDeleteRequests(ids, 'history')}
+              onNavigate={handleNavigate}
+            />
+          )}
+
+          {activePage === 'assistant' && (
+            <AiAssistantView
+              isStaff={isStaff}
+              departments={departments}
+              onOpenRequest={(requestId) => void openRequestById(requestId)}
               onNavigate={handleNavigate}
             />
           )}

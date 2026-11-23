@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Router } from 'express';
+import { aiRouter } from './ai-routes.js';
 import { categoryRouter } from './category-routes.js';
 import { departmentRouter } from './department-routes.js';
 import { internalKestraRouter } from './internal-kestra-routes.js';
@@ -48,6 +49,7 @@ apiRouter.get('/health', async (_req, res) => {
 });
 
 // Gắn các router nhánh
+apiRouter.use('/ai', aiRouter);
 apiRouter.use('/categories', categoryRouter);
 apiRouter.use('/departments', departmentRouter);
 apiRouter.use('/internal/kestra', internalKestraRouter);
