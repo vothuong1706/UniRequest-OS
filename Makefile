@@ -1,5 +1,5 @@
 # ==============================================================================
-# UniRequest-OS - DevOps Automation Makefile (Two-Tier Open-Core Platform)
+# UniRequest-OS - DevOps Automation Makefile (Three-Tier DX-OS Open-Core Platform)
 # Sử dụng: chạy `make help` để xem toàn bộ danh sách lệnh.
 # ==============================================================================
 

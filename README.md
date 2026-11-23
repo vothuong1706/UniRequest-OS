@@ -14,7 +14,7 @@
 
 Sản phẩm dự thi **Olympic Tin học Sinh viên Việt Nam 2026 - nội dung Phần mềm Nguồn mở (OLP PMNM 2026)**, chủ đề DX-OS Open-Core.
 
-**Đọc nhanh:** [Giới thiệu](#giới-thiệu) · [Thách thức &amp; Giải pháp](#thách-thức--giải-pháp) · [Đối tượng](#đối-tượng-sử-dụng) · [Chức năng](#chức-năng) · [Sản phẩm Demo](#sản-phẩm-demo) · [Kiến trúc](#kiến-trúc) · [Công nghệ](#công-nghệ-và-giấy-phép) · [Cài đặt từ máy sạch](#cài-đặt-từ-máy-sạch) · [Vận hành &amp; Sự cố](#vận-hành-và-xử-lý-sự-cố) · [Giấy phép &amp; Minh bạch AI](#giấy-phép-tham-khảo-và-minh-bạch-ai) · [CHANGELOG](#changelog)
+**Đọc nhanh:** [Giới thiệu](#giới-thiệu) · [Thách thức &amp; Giải pháp](#thách-thức--giải-pháp) · [Đối tượng](#đối-tượng-sử-dụng) · [Chức năng](#chức-năng) · [Sản phẩm Demo](#sản-phẩm-demo) · [Kiến trúc](#kiến-trúc) · [Công nghệ](#công-nghệ-và-giấy-phép) · [Cài đặt từ máy sạch](#cài-đặt-từ-máy-sạch) · [Định hướng](#định-hướng-phát-triển) · [Vận hành &amp; Sự cố](#vận-hành-và-xử-lý-sự-cố) · [Giấy phép &amp; Minh bạch AI](#giấy-phép-tham-khảo-và-minh-bạch-ai) · [CHANGELOG](#changelog)
 
 ---
 
@@ -76,11 +76,15 @@ Toàn bộ ảnh dưới đây được chụp trực tiếp từ hệ thống U
 | [![Keycloak SSO](docs/images/screenshots/LoginKeyCloak.png)](docs/images/screenshots/LoginKeyCloak.png) | [![Cổng KETOAN](docs/images/screenshots/CongGiangVien_KETOAN.png)](docs/images/screenshots/CongGiangVien_KETOAN.png) | [![Kestra Flows](docs/images/screenshots/KestraFlow.png)](docs/images/screenshots/KestraFlow.png) |
 
 <details>
-<summary><strong>Xem thêm ảnh chụp: Giao diện đăng nhập 3D, Cách ly dữ liệu Lớp/Ban & Demo chạy trên điện thoại qua Internet HTTPS</strong></summary>
+<summary><strong>Xem thêm 8 ảnh chụp thực tế: Giao diện Login 3D, Cách ly dữ liệu Lớp/Ban, Mobile HTTPS &amp; Hạ tầng</strong></summary>
 
-|                                 Giao diện đăng nhập tối giản                                 |                    Cách ly dữ liệu giữa Lớp `K11A1` và Ban `CTSV`                    |                               Chạy thực tế trên di động qua HTTPS Tunnel                               |
-| :------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: |
-| [![Login 3D](docs/images/screenshots/GiaoDienLogin.png)](docs/images/screenshots/GiaoDienLogin.png) | [![CTSV Group](docs/images/screenshots/CTSV_Group.png)](docs/images/screenshots/CTSV_Group.png) | [![Demo qua Nginx HTTPS](docs/images/screenshots/DemoQuaNginx.png)](docs/images/screenshots/DemoQuaNginx.png) |
+|                                 Giao diện đăng nhập tối giản                                 |                    Quản trị Realm Roles trên Keycloak 26.0                    |                               Cách ly Lớp `K11A1` (`sinhvien`)                                |                               Cách ly Lớp `k11A2` (`sinhvien2`)                                |
+| :------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------: |
+| [![Login 3D](docs/images/screenshots/GiaoDienLogin.png)](docs/images/screenshots/GiaoDienLogin.png) | [![Realm Roles](docs/images/screenshots/Accouts.png)](docs/images/screenshots/Accouts.png) | [![SinhVien K11A1](docs/images/screenshots/SinhVien_K11A1.png)](docs/images/screenshots/SinhVien_K11A1.png) | [![SinhVien K11A2](docs/images/screenshots/SinhVien_K11A2.png)](docs/images/screenshots/SinhVien_K11A2.png) |
+
+|                    Cổng Cán bộ thuộc Group `CTSV`                    |                               Chạy thực tế trên di động qua HTTPS Tunnel                               |                              8 Container hoạt động qua `make ps`                              |                         Tự động hóa DevOps trong `Makefile`                         |
+| :--------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------: |
+| [![CTSV Group](docs/images/screenshots/CTSV_Group.png)](docs/images/screenshots/CTSV_Group.png) | [![Demo qua Nginx HTTPS](docs/images/screenshots/DemoQuaNginx.png)](docs/images/screenshots/DemoQuaNginx.png) | [![Docker WSL2](docs/images/screenshots/Docker_WSL_Remote.png)](docs/images/screenshots/Docker_WSL_Remote.png) | [![Makefile](docs/images/screenshots/Makefile.png)](docs/images/screenshots/Makefile.png) |
 
 </details>
 
@@ -96,7 +100,7 @@ UniRequest-OS bám sát **khung ba tầng của đề thi DX-OS Open-Core**:
 - **Tầng 2 - Bốn không gian năng lực số `H-P-D-I`:** cung cấp các phân hệ Con người số `[H]`, Quy trình số `[P]`, Dữ liệu số `[D]` và Trí tuệ số `[I]`.
 - **Tầng 3 - Ứng dụng nghiệp vụ (UniRequest Portal):** React 19 PWA + Express Domain API triển khai trọn gói qua Docker Compose.
 
-Chỉ cổng **Nginx Same-Origin (`:3000`)** và **Kong Gateway (`:8000`)** mở điểm truy cập ra ngoài để bảo vệ biên mạng Zero-Trust. Xem chi tiết toàn bộ bộ sơ đồ UML 2.x BCE (Sequence, Use Case, State, Class, Deployment) tại [`docs/uml.md`](docs/uml.md).
+Về luồng truy cập ứng dụng, mọi yêu cầu từ trình duyệt và demo Internet đều đi tập trung qua **Nginx Same-Origin (`:3000` / Caddy `:443`)** và **Kong API Gateway (`:8000` cho `/api/*`, `/auth/*`)**; trên môi trường dev/chấm thi cục bộ, [`docker-compose.yml`](docker-compose.yml) có ánh xạ thêm các cổng quản trị (`4000`, `5432`, `8001`, `8080`, `8085`, `9000`-`9001`) để giám khảo kiểm tra trực tiếp từng lõi dịch vụ. Xem chi tiết toàn bộ bộ sơ đồ UML 2.x BCE (Sequence, Use Case, State, Class, Deployment) tại [`docs/uml.md`](docs/uml.md).
 
 ---
 
@@ -125,7 +129,7 @@ Chỉ cổng **Nginx Same-Origin (`:3000`)** và **Kong Gateway (`:8000`)** mở
 - **Hệ điều hành:** Linux (Ubuntu 22.04/24.04), macOS hoặc Windows qua **WSL 2**.
 - **Công cụ:** Docker Engine `24.0+`, Docker Compose `v2.20+`, GNU Make `4.0+`.
 - **Tài nguyên:** RAM tối thiểu `4 GB` *(khuyến nghị `6 GB`)*, ổ trống `>= 8 GB`.
-- **Cổng mạng:** `3000` (Portal / Same-Origin Proxy), `4000` (Backend), `5432` (PostgreSQL), `8000`-`8001` (Kong), `8080` (Keycloak), `8085` (Kestra), `9000`-`9001` (MinIO).
+- **Cổng mạng:** `3000` (Portal / Same-Origin Proxy), `4000` (Backend), `5432` (PostgreSQL), `8000`-`8001` (Kong), `8080` (Keycloak), `8085` (Kestra), `9000`-`9001` (MinIO), cùng `80`/`443` *(tùy chọn khi bật Caddy profile `internet`)*.
 
 ### Khởi chạy bằng 1 lệnh
 
@@ -166,14 +170,22 @@ make unit-test && make test
 
 ---
 
+## Định hướng phát triển
+
+- **Hồ dữ liệu Ấm - Lạnh (Lakehouse):** Tích hợp `Redpanda` + `Apache Iceberg` + `Trino/DuckDB` để đồng bộ dữ liệu lịch sử sang kho phân tích nhiều năm học cho Ban Giám hiệu mà không làm chậm giao dịch PostgreSQL OLTP.
+- **Trí tuệ nhân tạo `[I]` chuyên sâu (RAG + Qdrant):** Kết hợp cơ sở dữ liệu véc-tơ `Qdrant` trên bộ quy chế đào tạo, sổ tay sinh viên của từng trường đại học để AI trích dẫn điều khoản và gợi ý câu trả lời chuẩn.
+- **Giám sát 360° & Bảo mật nâng cao:** Bổ sung xác thực đa yếu tố `WebAuthn/TOTP` cho tài khoản quản trị/cán bộ, chuẩn hóa tài liệu API (`Zod + OpenAPI`) và bộ giám sát `Prometheus + Grafana`.
+
+---
+
 ## Vận hành và xử lý sự cố
 
 | Lệnh                              | Tác dụng kiểm tra / vận hành                                            | Kết quả xác minh gần nhất                  |
 | :--------------------------------- | :--------------------------------------------------------------------------- | :---------------------------------------------- |
 | `make ps`                        | Xem trạng thái toàn bộ container                                         | 8/8 dịch vụ đang hoạt động                |
-| `make unit-test`                 | Chạy Vitest + Supertest (AI, Magic Bytes, SHA-256, Scope, UI Utils)         | Backend `33/33` + Frontend `9/9` đạt 100% |
+| `make unit-test`                 | Chạy Vitest + Supertest độc lập (AI, Magic Bytes, SHA-256, Scope, UI Utils; không cần Docker) | Backend `33/33` + Frontend `9/9` đạt 100% |
 | `make lint`                      | Kiểm tra `tsc`, ESLint, Prettier, Vite PWA, Compose & Realm JSON          | Đạt 100%                                      |
-| `make test`                      | Kịch bản E2E 7 bước (Kong, OIDC, JWT 401, MinIO, PWA, Socket.IO, Kestra) | Đạt `7/7` bước chuẩn                     |
+| `make test`                      | Kịch bản E2E 7 bước trên 8 container đang chạy (Kong, OIDC, JWT 401, MinIO, PWA, WS, Kestra) | Đạt `7/7` bước chuẩn                     |
 | `make backup` / `make restore` | Sao lưu PostgreSQL + MinIO và kiểm chứng checksum `SHA256SUMS`         | Xác minh phục hồi toàn vẹn                 |
 
 | Sự cố thường gặp                                     | Cách xử lý                                                                                                                                          |
