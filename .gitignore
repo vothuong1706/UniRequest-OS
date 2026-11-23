@@ -32,6 +32,7 @@ BAOCAO/
 *.docx
 /images/
 /agency-agents/
+.agents/
 /backups/
 
 # IDE & Hệ điều hành

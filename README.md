@@ -198,7 +198,7 @@ Toàn bộ mã nguồn và tài liệu do nhóm phát triển trong **UniRequest
 - **Dự án tham khảo từ cộng đồng OLP DX-OS:**
   - **[Signet (HIT-Champion)](https://github.com/HIT-Champion/Signet):** Tham khảo phương pháp phân tách khung 3 tầng DX-OS, bố cục sơ đồ kiến trúc động 4 không gian `H-P-D-I` và văn phong đặc tả kỹ thuật.
   - **[Disaster DX-OS (DTU_DZ_1)](https://github.com/disaster-dxos/disaster-dxos):** Tham khảo cấu trúc chuẩn hóa README nguồn mở, quy chuẩn minh bạch giấy phép và công khai sử dụng công cụ AI.
-- **Thư viện & Công cụ bên thứ ba:** Bộ kỹ năng kiểm thử/kiến trúc tham khảo trong `.agents/skills/` từ `agency-agents` (`MIT License`), bộ icon `lucide-react` (`ISC`) và các Docker image nguồn mở thượng nguồn được liệt kê đầy đủ trong [`NOTICE`](NOTICE).
+- **Thư viện & Công cụ bên thứ ba:** Bộ icon `lucide-react` (`ISC License`) và các Docker image nguồn mở thượng nguồn (Keycloak, Kong, Kestra, PostgreSQL, MinIO, Caddy, Nginx) được liệt kê đầy đủ trong [`NOTICE`](NOTICE).
 
 ### 3. Công khai Minh bạch các phần có sử dụng AI
 

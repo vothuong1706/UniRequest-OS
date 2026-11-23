@@ -18,7 +18,6 @@ chính thức hoặc thư viện chuẩn OSI dưới đây (không sửa đổi 
 - MinIO / pgsty/silo S3 Object Storage (AGPL-3.0 / Apache-2.0, chạy dịch vụ Docker tách biệt qua mạng HTTP/S3)
 - Nginx Alpine (BSD-2-Clause License) - https://nginx.org/
 - Node.js, Express, Socket.IO, React 19, Vite, Tailwind CSS, Shadcn/UI, Lucide Icons, Vitest (MIT / ISC)
-- Bộ kỹ năng tham khảo phát triển trong .agents/skills/ từ dự án agency-agents (MIT License)
 
 ================================================================================
 2. Tham khảo Kiến trúc & Tài liệu từ Cộng đồng Nguồn mở
